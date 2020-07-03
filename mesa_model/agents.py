@@ -34,3 +34,38 @@ class BaseEnvironment(mesa.Agent):
 
 	def step(self):
 		pass
+
+# added 07/03 
+class UnexposedCell(BaseEnvironment): # unreachable by agents 
+	def __intit__(self, unique_id, model, pos=(0,0)):
+		super().__init__(unique_id,model)
+
+class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces, etc 
+	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelyhood = 1, decay = 1):
+		super().__init__(unique_id, model, pos) 
+		self.infected = infected
+		self.transmissionLikelyhood = transmissionLikelyhood
+		self.decay = decay
+
+class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered 
+	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelyhood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
+		super().__init__(unique_id, model, pos, infected, transmissionLikelyhood, decay) 
+		self.cleaningInterval = cleaningInterval
+		self.cleaned = cleaned
+
+class AirCell(InfectableCell): # can be traveled through 
+	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelyhood = 1, decay = 1, ventilationDirection = -1, ventilationDecay = 1):
+		super().__init__(unique_id, model, pos, infected, transmissionLikelyhood, decay) 
+		self.ventilationDirection = ventilationDirection
+		self.ventilationDecay = ventilationDecay
+
+class Door(SurfaceCell): # upon interaction telleports agent to other side 
+	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelyhood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
+		super().__init__(unique_id, model, pos, infected, transmissionLikelyhood, decay, cleaningInterval, cleaned)
+
+'''
+this one seemed a little complicated and I wasn't quite sure how to appraoch it 
+class VentilatorCell(UnexposedCell):
+	def __intit__(self, unique_id, model, pos=(0,0), ventilationDecay):
+		super().__init__(unique_id,model)
+'''
