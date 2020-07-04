@@ -1,5 +1,18 @@
 import mesa
 import numpy as np
+import random
+
+
+grid_width = 20
+grid_height = 20
+
+def get_distance(agent_1, agent_2):
+	xPos1 = agent_1.pos[0]
+	yPos1 = agent_1.pos[1]
+	xPos2 = agent_2.pos[0]
+	yPos2 = agent_2.pos[1]
+
+	return (((xPos1 - xPos2)**2 + (yPos1 - yPos2)**2)**0.5) 
 
 class BaseHuman(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
@@ -16,8 +29,24 @@ class BaseHuman(mesa.Agent):
 		self.recovered = recovered
 		self.pos = pos
 
+	def move(self):
+		# agents will move randomly to a sqaure next to their current square
+		'''
+		possible_steps = self.model.grid.get_neighborhood(
+			self.pos,
+			moore=True, # can move diagonaly
+			include_center=False)
+		new_position = self.random.choice(possible_steps)
+		self.model.grid.move_agent(self, new_position)
+		'''
+		# agents will move randomly throughout grid
+		new_position = (random.randrange(grid_width), random.randrange(grid_height)) # get new position for agent w/in bounds of grid
+		self.model.grid.move_agent(self, new_position)
+
+
 	def step(self):
-		pass
+		self.move()
+		#pass
 
 class Student(BaseHuman):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):

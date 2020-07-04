@@ -54,6 +54,8 @@ class CovidModel(Model):
 		self.schedule.step()
 		self.datacollector.collect(self)
 
+			
+
 	def run_model(self):
 		for i in range(self.run_time):
 			self.step()
