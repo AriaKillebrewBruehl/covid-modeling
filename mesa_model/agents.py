@@ -31,7 +31,7 @@ class BaseHuman(mesa.Agent):
 
 	def move(self):
 		# agents will move randomly to a sqaure next to their current square
-		'''
+		
 		possible_steps = self.model.grid.get_neighborhood(
 			self.pos,
 			moore=True, # can move diagonaly
@@ -42,11 +42,14 @@ class BaseHuman(mesa.Agent):
 		# agents will move randomly throughout grid
 		new_position = (random.randrange(grid_width), random.randrange(grid_height)) # get new position for agent w/in bounds of grid
 		self.model.grid.move_agent(self, new_position)
-
+	'''
+		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
+			if neighbor.infected == True and self.infected == False:
+				print(str(neighbor.unique_id) + " infected " + str(self.unique_id))
+				self.infected = True
 
 	def step(self):
 		self.move()
-		#pass
 
 class Student(BaseHuman):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
@@ -57,22 +60,22 @@ class Faculty(BaseHuman):
 		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, schedule, quarantined)
 
 class BaseEnvironment(mesa.Agent):
-	def __init__(self, unique_id, model, pos=(0,0)):
+	def __init__(self, unique_id, model, pos=(0,0), infected = False):
 		super().__init__(unique_id, model)
 		self.pos = pos
+		self.infected = infected
 
 	def step(self):
 		pass
 
 # added 07/03 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
-	def __intit__(self, unique_id, model, pos=(0,0)):
-		super().__init__(unique_id,model)
+	def __intit__(self, unique_id, model, pos=(0,0), infected = False):
+		super().__init__(unique_id,model, infected)
 
 class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces, etc 
 	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelyhood = 1, decay = 1):
-		super().__init__(unique_id, model, pos) 
-		self.infected = infected
+		super().__init__(unique_id, model, pos, infected) 
 		self.transmissionLikelyhood = transmissionLikelyhood
 		self.decay = decay
 

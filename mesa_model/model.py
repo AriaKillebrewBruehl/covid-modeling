@@ -38,7 +38,7 @@ class CovidModel(Model):
 			)
 
 		# Initialize agents here
-		for i in zip(range(0, 3), [(True, False), (False, True), (False, False)]):
+		for i in zip(range(0, 5), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
 			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
 			test_human_1.infected, test_human_1.recovered = i[1]
 			test_environment = BaseEnvironment(0, (11, 10 + i[0]), self)
