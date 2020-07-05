@@ -1,4 +1,4 @@
-from mesa_model.agents import Student, Faculty, BaseHuman, BaseEnvironment
+from mesa_model.agents import *
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
@@ -38,7 +38,7 @@ class CovidModel(Model):
 			)
 
 		# Initialize agents here
-		for i in zip(range(0, 5), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
+		for i in zip(range(0, 3), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
 			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
 			test_human_1.infected, test_human_1.recovered = i[1]
 			test_environment = BaseEnvironment(0, (11, 10 + i[0]), self)
@@ -46,7 +46,11 @@ class CovidModel(Model):
 			self.grid.place_agent(test_environment, (11, 10 + i[0]))
 			self.schedule.add(test_human_1)
 			self.schedule.add(test_environment)
-
+		# creating block of unexposed cells for test purposes 
+		for i in range(10):
+			for j in range(grid_width):
+				test_block = UnexposedCell(1, (j, i), self)
+				self.grid.place_agent(test_block, (j,i))
 		self.running = True
 		self.datacollector.collect(self)
 
