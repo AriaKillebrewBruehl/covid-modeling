@@ -37,7 +37,7 @@ def canvas_repr(agent):
 		port["Filled"] = "true"
 		port["Color"] = "#DDDDDD" if not isinstance(agent, AirCell) else "#FFFFFF"
 		if isinstance(agent, InfectableCell):
-			port["Color"] = [port["Color"], "rgba(255, 0, 0, " + str(agent.infected) +  ")"]
+			port["Color"] = [port["Color"], "rgba(255, 0, 0, " + str(agent.infected / 2) +  ")"]
 
 	return port
 

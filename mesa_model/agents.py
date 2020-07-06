@@ -1,5 +1,6 @@
 import mesa
 import numpy as np
+import numpy.linalg
 import random
 
 
@@ -122,7 +123,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.infected = max(self.infected + amount, 1.0) # Make sure we don't go past maximum capacity.
 
 	def cleanse(self, percent = 1.0):
-		self.infected *= percent
+		self.infected *= (1 - percent)
 
 	def infect_agents(self):
 		for agent in self.model.grid.get_cell_list_contents(self.pos):
@@ -130,10 +131,20 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 				agent.infect() # In the future, the initial amount may be important.
 
 class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered 
-	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
+	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, cleaningInterval = -1, cleaned = True):
 		super().__init__(unique_id, model, pos, infected, transmissionLikelihood, decay) 
 		self.cleaningInterval = cleaningInterval
+		self.lastCleaned = 0
 		self.cleaned = cleaned
+
+	def step():
+		self.clean()
+
+	def clean():
+		self.lastCleaned += 1
+		if self.cleaningInterval >= self.lastCleaned:
+			self.lastCleaned = 0
+			self.cleanse(1.0) # how effective are our cleaning measures?
 
 class AirCell(InfectableCell): # can be traveled through 
 	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, ventilationDirection = 0, ventilationDecay = 1):
@@ -151,8 +162,9 @@ class AirCell(InfectableCell): # can be traveled through
 			moore=True, # can move diagonaly
 			include_center=False)
 		x, y = np.round(np.cos(self.ventilationDirection)), np.round(np.sin(self.ventilationDirection))
-		target = next(filter(lambda z: z.pos == (x, y), possible_steps))
-		target.infect(self.infected * (1 - self.ventilationDecay))
+		target = filter(lambda x: isinstance(x, InfectableCell), next(filter(lambda z: z[0].pos == (x, y), possible_steps)))
+		for t in target:
+			t.infect(self.infected * (1 - self.ventilationDecay))
 		self.infected *= self.ventilationDecay
 
 
@@ -163,7 +175,7 @@ class Door(SurfaceCell): # upon interaction telleports agent to other side
 
 # this one seemed a little complicated and I wasn't quite sure how to appraoch it 
 class VentilatorCell(UnexposedCell):
-	def __init__(self, unique_id, model, pos=(0,0), ventilationDecay=lambda rx, ry: 1 / (np.norm), maxRadius = 5):
+	def __init__(self, unique_id, model, pos=(0,0), ventilationDecay=lambda rx, ry: 1 / (np.linalg.norm([rx, ry], 2)), maxRadius = 5):
 		super().__init__(unique_id,model)
 		self.ventilationDecay = ventilationDecay
 
@@ -171,9 +183,9 @@ class VentilatorCell(UnexposedCell):
 		self.ventilate()
 
 	def ventilate(self):
-
 		# rough outline complete later
-		for cell in []:
-			rx, ry = self.pos - cell.pos # rough idea
-			cell.cleanse(self.ventilationDecay(rx, ry))
-		pass
+		for x in range(grid_width):
+			for y in range(grid_height):
+				rx, ry = tuple(np.array(self.pos) - np.array((x, y)))
+				cont = self.model.grid.get_cell_list_contents((x, y))
+				cell.cleanse(self.ventilationDecay(rx, ry))

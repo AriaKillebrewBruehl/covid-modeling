@@ -38,15 +38,18 @@ class CovidModel(Model):
 			)
 
 		# Initialize agents here
+		for i in range(0, grid_width):
+			for j in range(10, grid_height):
+				test_environment = InfectableCell(i + 20, self, (i, j))
+				test_environment.infect()
+				self.grid.place_agent(test_environment, (i, j))				
+				self.schedule.add(test_environment)
+
 		for i in zip(range(0, 3), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
 			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
 			test_human_1.infect()
-			test_environment = InfectableCell(i[0] + 20, self, (11, 10 + i[0]))
-			test_environment.infect()
 			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
-			self.grid.place_agent(test_environment, (11, 10 + i[0]))
 			self.schedule.add(test_human_1)
-			self.schedule.add(test_environment)
 		# creating block of unexposed cells for test purposes 
 		for i in range(10):
 			for j in range(grid_width):
@@ -59,7 +62,6 @@ class CovidModel(Model):
 		self.schedule.step()
 		self.datacollector.collect(self)
 
-			
 
 	def run_model(self):
 		for i in range(self.run_time):
