@@ -4,6 +4,7 @@ from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
 from mesa import Model
 import numpy as numpy
+from mesa_model.converter import convert
 
 
 def get_infected_agents(model):
@@ -38,23 +39,27 @@ class CovidModel(Model):
 			)
 
 		# Initialize agents here
+		for i in zip(range(0, 3), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
+			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
+			test_human_1.infect()
+			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
+			self.schedule.add(test_human_1)
+			'''
+		convert('mesa_model/map01.png', self) # create specified BaseEnvironment cells from image, place
+		# in environment and add to scheduler 
+		'''
 		for i in range(0, grid_width):
 			for j in range(10, grid_height):
 				test_environment = InfectableCell(i + 20, self, (i, j))
 				test_environment.infect()
 				self.grid.place_agent(test_environment, (i, j))				
 				self.schedule.add(test_environment)
-
-		for i in zip(range(0, 3), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
-			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
-			test_human_1.infect()
-			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
-			self.schedule.add(test_human_1)
 		# creating block of unexposed cells for test purposes 
 		for i in range(10):
 			for j in range(grid_width):
 				test_block = UnexposedCell(1, (j, i), self)
 				self.grid.place_agent(test_block, (j,i))
+				
 		self.running = True
 		self.datacollector.collect(self)
 

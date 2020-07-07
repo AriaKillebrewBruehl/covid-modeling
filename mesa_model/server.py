@@ -9,6 +9,16 @@ from mesa_model.model import CovidModel
 UNINFECTED_COLOR = "#AAAAAA"
 INFECTED_COLOR = "#FF0000"
 RECOVERED_COLOR = "#00FF00"
+# ------- RGBA cell mappings -----------
+air = "#FFFFFF" #(255, 255, 255)       # white
+dead = "#000000" #(0, 0, 0)            # black
+surface = "#808080" #(128, 128, 128)   # gray
+arrival = "#43A84D" #(67, 168, 77)     # green
+handwash = "#0094FF" #(0, 148, 255)    # blue
+door = "#FF006E" #(255, 0, 110)        # magenta
+window = "B077FF" #(176, 119, 255)    # lavender
+other = "#FFDC30" #(255, 220, 48)      # yellow
+# --------------------------------------
 
 # How do we want to set up our grid?
 def canvas_repr(agent):
@@ -35,10 +45,26 @@ def canvas_repr(agent):
 		port["h"] = 1
 		port["Layer"] = 0
 		port["Filled"] = "true"
+		
 		port["Color"] = "#DDDDDD" if not isinstance(agent, AirCell) else "#FFFFFF"
 		if isinstance(agent, InfectableCell):
 			port["Color"] = [port["Color"], "rgba(255, 0, 0, " + str(agent.infected / 2) +  ")"]
-
+		'''
+		# specify color of each environment aspect 
+		if isinstance(agent, InfectableCell):
+			port["Color"] = air
+		elif isinstance(agent, AirCell):
+			print("airCell")
+		elif isinstance(agent, UnexposedCell):
+			port["Color"] = dead
+		elif isinstance(agent, SurfaceCell):
+			port["Color"] = surface
+		elif isinstance(agent, UnexposedCell):
+			port["Color"] = dead
+		elif isinstance(agent, DoorCell):
+			port["Color"] = door
+			print("door")
+		'''
 	return port
 
 canvas_element = CanvasGrid(canvas_repr, CovidModel.grid_width, CovidModel.grid_height, 500, 500)

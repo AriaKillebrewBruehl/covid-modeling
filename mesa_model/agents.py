@@ -155,7 +155,6 @@ class AirCell(InfectableCell): # can be traveled through
 	def step(self):
 		super().step()
 		self.ventilate()
-
 	def ventilate(self):
 		possible_steps = self.model.grid.get_neighborhood(
 			self.pos,
@@ -166,7 +165,6 @@ class AirCell(InfectableCell): # can be traveled through
 		for t in target:
 			t.infect(self.infected * (1 - self.ventilationDecay))
 		self.infected *= self.ventilationDecay
-
 
 class Door(SurfaceCell): # upon interaction telleports agent to other side 
 	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelihood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
