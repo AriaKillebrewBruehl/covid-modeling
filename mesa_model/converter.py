@@ -32,7 +32,6 @@ def convert(filename, model):
             elif rgba == handwash:
                 environment = SurfaceCell(10*y + x, model, (x, y))
             elif rgba == door:
-                print("Door")
                 environment = Door(10*y + x, model, (x, y))
             elif rgba == window:
                 environment = Door(10*y + x, model, (x, y))

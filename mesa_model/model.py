@@ -17,8 +17,8 @@ def get_uninfected_agents(model):
 	return len([x for x in model.schedule.agents if isinstance(x, BaseHuman) and x.recovered == False and x.infected == False])
 
 class CovidModel(Model):
-	grid_width = 20
-	grid_height = 20
+	grid_width = 32
+	grid_height = 32
 
 	def __init__(self, height=grid_height, width=grid_width):
 		self.height = height
@@ -44,7 +44,7 @@ class CovidModel(Model):
 			test_human_1.infect()
 			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
 			self.schedule.add(test_human_1)
-			'''
+			
 		convert('mesa_model/map01.png', self) # create specified BaseEnvironment cells from image, place
 		# in environment and add to scheduler 
 		'''
@@ -60,7 +60,7 @@ class CovidModel(Model):
 			for j in range(grid_width):
 				test_block = UnexposedCell(1, (j, i), self)
 				self.grid.place_agent(test_block, (j,i))
-				
+		'''		
 		self.running = True
 		self.datacollector.collect(self)
 

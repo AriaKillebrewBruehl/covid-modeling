@@ -45,26 +45,28 @@ def canvas_repr(agent):
 		port["h"] = 1
 		port["Layer"] = 0
 		port["Filled"] = "true"
-		
+		'''
 		port["Color"] = "#DDDDDD" if not isinstance(agent, AirCell) else "#FFFFFF"
 		if isinstance(agent, InfectableCell):
 			port["Color"] = [port["Color"], "rgba(255, 0, 0, " + str(agent.infected / 2) +  ")"]
 		'''
 		# specify color of each environment aspect 
-		if isinstance(agent, InfectableCell):
-			port["Color"] = air
-		elif isinstance(agent, AirCell):
-			print("airCell")
-		elif isinstance(agent, UnexposedCell):
-			port["Color"] = dead
-		elif isinstance(agent, SurfaceCell):
-			port["Color"] = surface
-		elif isinstance(agent, UnexposedCell):
-			port["Color"] = dead
-		elif isinstance(agent, DoorCell):
-			port["Color"] = door
-			print("door")
-		'''
+		if isinstance(agent, UnexposedCell):
+			if isinstance(agent, VentilatorCell):
+				port["Color"] = window
+			else:
+				port["Color"] = dead
+		elif isinstance(agent, InfectableCell):
+			if isinstance(agent, SurfaceCell):
+				if isinstance(agent, Door):
+					port["Color"] = door
+				else:
+					port["Color"] = surface 
+			elif isinstance(agent, AirCell):
+				port["Color"] = air
+				return 
+			else:
+				port["Color"] = other
 	return port
 
 canvas_element = CanvasGrid(canvas_repr, CovidModel.grid_width, CovidModel.grid_height, 500, 500)
