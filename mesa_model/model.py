@@ -50,8 +50,9 @@ class CovidModel(Model):
 		'''
 		for i in range(0, grid_width):
 			for j in range(10, grid_height):
-				test_environment = InfectableCell(i + 20, self, (i, j))
-				test_environment.infect()
+				test_environment = AirCell(i * 10 + j * 10000, self, (i, j), ventilationDecay = .10)
+				if i < 10:
+					test_environment.infect()
 				self.grid.place_agent(test_environment, (i, j))				
 				self.schedule.add(test_environment)
 		# creating block of unexposed cells for test purposes 
