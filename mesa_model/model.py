@@ -44,12 +44,12 @@ class CovidModel(Model):
 			test_human_1.infect()
 			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
 			self.schedule.add(test_human_1)
-			print("made human")
-		convert('mesa_model/map01.png', self) # create specified BaseEnvironment cells from image, place
+		'''
+		convert('mesa_model/map01.png', self) # when this is used to create environment agents don't work (humans don't move, air cells don't decay)# create specified BaseEnvironment cells from image, place
 		# in environment and add to scheduler 
 		
 		'''
-		for i in range(0, grid_width):
+		for i in range(0, grid_width):# when this is used to create environment everything works fine
 			for j in range(10, grid_height):
 				test_environment = AirCell(i * 10 + j * 10000, self, (i, j), ventilationDecay = .10)
 				if i < 10:
@@ -61,13 +61,13 @@ class CovidModel(Model):
 			for j in range(grid_width):
 				test_block = UnexposedCell(1, (j, i), self)
 				self.grid.place_agent(test_block, (j,i))
-'''
+
 		self.running = True
 		self.datacollector.collect(self)
 	def setUp(self):
 		pass
 	def step(self):
-		print("in model step")
+		print("in model step") # prints always (not affected by converter funct)
 		self.schedule.step()
 		self.datacollector.collect(self)
 

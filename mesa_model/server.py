@@ -45,11 +45,7 @@ def canvas_repr(agent):
 		port["h"] = 1
 		port["Layer"] = 0
 		port["Filled"] = "true"
-		'''
-		port["Color"] = "#DDDDDD" if not isinstance(agent, AirCell) else "#FFFFFF"
-		if isinstance(agent, InfectableCell):
-			port["Color"] = [port["Color"], "rgba(255, 0, 0, " + str(agent.infected / 2) +  ")"]
-		'''
+		
 		# specify color of each environment aspect 
 		if isinstance(agent, UnexposedCell):
 			if isinstance(agent, VentilatorCell):

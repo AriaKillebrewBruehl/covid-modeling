@@ -57,13 +57,13 @@ class BaseHuman(mesa.Agent):
 		new_position = random.randrange(grid_width), random.randrange(grid_height)  # get new position for agent w/in bounds of grid
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
 			#say get_cell_list_contents is unexposed cell but agent will move there any way
-			print(new_position)
+			print(new_position) # when converter used for environment doesn't get printed meaning get_new_pos isn't called
 			return new_position
 		else:
 			return self.get_new_pos_far()
 
 	def move(self):
-		print("in move")
+		print("in move") # when converter funct is called this wont't print meaning move isn't called
 		self.model.grid.move_agent(self, self.get_new_pos_far())
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
 			if neighbor.infected == True and self.infected == False:
@@ -71,7 +71,7 @@ class BaseHuman(mesa.Agent):
 				# let infect() determmine if they should move from recovered to another category
 
 	def step(self):
-		print("in step")
+		print("in step") # when converter funct is called this wont't print meaning step isn't called
 		self.move()
 		self.update_infection()
 
