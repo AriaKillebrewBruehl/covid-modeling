@@ -10,14 +10,14 @@ UNINFECTED_COLOR = "#AAAAAA"
 INFECTED_COLOR = "#FF0000"
 RECOVERED_COLOR = "#00FF00"
 # ------- RGBA cell mappings -----------
-air = "#FFFFFF" #(255, 255, 255)       # white
-dead = "#000000" #(0, 0, 0)            # black
-surface = "#808080" #(128, 128, 128)   # gray
-arrival = "#43A84D" #(67, 168, 77)     # green
-handwash = "#0094FF" #(0, 148, 255)    # blue
-door = "#FF006E" #(255, 0, 110)        # magenta
-window = "B077FF" #(176, 119, 255)    # lavender
-other = "#FFDC30" #(255, 220, 48)      # yellow
+air = "#FFFFFF"        # white
+dead = "#000000"            # black
+surface = "#808080"   # gray 
+arrival = "#43A84D" #shade = (67, 168, 77)     # green
+handwash = "#0094FF" #shade = (0, 148, 255)    # blue
+door = "#FF006E"         # magenta
+window = "B077FF"     # lavender
+other = "#FFDC30"       # yellow
 # --------------------------------------
 
 # How do we want to set up our grid?
@@ -54,19 +54,25 @@ def canvas_repr(agent):
 		if isinstance(agent, UnexposedCell):
 			if isinstance(agent, VentilatorCell):
 				port["Color"] = window
+				shade = "(176, 119, 255"
 			else:
 				port["Color"] = dead
+				shade = "(0, 0, 0"
 		elif isinstance(agent, InfectableCell):
 			if isinstance(agent, SurfaceCell):
 				if isinstance(agent, Door):
 					port["Color"] = door
+					shade = "(255, 0, 110"
 				else:
 					port["Color"] = surface 
+					shade = "(128, 128, 128"
 			elif isinstance(agent, AirCell):
-				port["Color"] = air
-				return 
+				port["Color"] = air 
+				shade = "(255, 0, 0"
 			else:
 				port["Color"] = other
+				shade = "(255, 220, 48"
+			port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
 	return port
 
 canvas_element = CanvasGrid(canvas_repr, CovidModel.grid_width, CovidModel.grid_height, 500, 500)

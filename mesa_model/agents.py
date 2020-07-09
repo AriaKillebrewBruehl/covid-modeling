@@ -4,18 +4,10 @@ import numpy.linalg
 import numpy.random
 import random
 
-grid_width = 20
-grid_height = 20
+grid_width = 32
+grid_height = 32
 
 frames_per_day = 2
-
-def get_distance(agent_1, agent_2):
-	xPos1 = agent_1.pos[0]
-	yPos1 = agent_1.pos[1]
-	xPos2 = agent_2.pos[0]
-	yPos2 = agent_2.pos[1]
-
-	return (((xPos1 - xPos2)**2 + (yPos1 - yPos2)**2)**0.5) 
 
 class BaseHuman(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
@@ -56,7 +48,7 @@ class BaseHuman(mesa.Agent):
 			moore=True, # can move diagonaly
 			include_center=False)
 		new_position = self.random.choice(possible_steps)	
-		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # isnt working see line 48
+		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
 			return new_position
 		else:
 			return self.get_new_pos_near()
@@ -65,19 +57,21 @@ class BaseHuman(mesa.Agent):
 		new_position = random.randrange(grid_width), random.randrange(grid_height)  # get new position for agent w/in bounds of grid
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
 			#say get_cell_list_contents is unexposed cell but agent will move there any way
+			print(new_position)
 			return new_position
 		else:
 			return self.get_new_pos_far()
 
 	def move(self):
+		print("in move")
 		self.model.grid.move_agent(self, self.get_new_pos_far())
-		
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
 			if neighbor.infected == True and self.infected == False:
 				self.infect()
 				# let infect() determmine if they should move from recovered to another category
 
 	def step(self):
+		print("in step")
 		self.move()
 		self.update_infection()
 
