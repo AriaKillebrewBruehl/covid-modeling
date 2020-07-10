@@ -10,14 +10,14 @@ UNINFECTED_COLOR = "#AAAAAA"
 INFECTED_COLOR = "#FF0000"
 RECOVERED_COLOR = "#00FF00"
 # ------- RGBA cell mappings -----------
-air = "#FFFFFF"        # white
-dead = "#000000"            # black
-surface = "#808080"   # gray 
-arrival = "#43A84D" #shade = (67, 168, 77)     # green
-handwash = "#0094FF" #shade = (0, 148, 255)    # blue
-door = "#FF006E"         # magenta
-window = "B077FF"     # lavender
-other = "#FFDC30"       # yellow
+air = "#FFFFFF"          # white
+inaccessible = "#000000" # black
+surface = "#808080"      # gray 
+arrival = "#43A84D"      #shade = (67, 168, 77)  # green
+handwash = "#0094FF"     #shade = (0, 148, 255)  # blue
+door = "#7A2D2D"         # brown
+window = "46EB7D"        # mnit
+other = "#EB46B4"        # yellow
 # --------------------------------------
 
 # How do we want to set up our grid?
@@ -52,13 +52,13 @@ def canvas_repr(agent):
 				port["Color"] = window
 				shade = "(176, 119, 255"
 			else:
-				port["Color"] = dead
-				shade = "(0, 0, 0"
+				port["Color"] = inaccessible
+				shade = "(252, 100, 24"
 		elif isinstance(agent, InfectableCell):
 			if isinstance(agent, SurfaceCell):
 				if isinstance(agent, Door):
 					port["Color"] = door
-					shade = "(255, 0, 110"
+					shade = "(125, 70, 235"
 				else:
 					port["Color"] = surface 
 					shade = "(128, 128, 128"
@@ -67,7 +67,7 @@ def canvas_repr(agent):
 				shade = "(255, 0, 0"
 			else:
 				port["Color"] = other
-				shade = "(255, 220, 48"
+				shade = "(255, 0, 0"
 			if agent.infected:
 				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
 	return port
