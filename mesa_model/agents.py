@@ -79,7 +79,7 @@ class BaseHuman(mesa.Agent):
 						print("from air" + str(choice))
 						self.infect()
 	def step(self):
-		print("in step") # when converter funct is called this wont't print meaning step isn't called
+		#print("in step") # when converter funct is called this wont't print meaning step isn't called
 		self.move()
 		self.update_infection()
 

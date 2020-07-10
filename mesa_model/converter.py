@@ -23,7 +23,7 @@ def convert(filename, model):
             rgba = pixel[x,y]  # get the RGBA Value of the specified pixel
             if rgba == air:
                 environment = AirCell(10*y + x, model, (x, y)) # create specified BaseEnvironment cell
-                environment.infect()
+                #environment.infect()
             elif rgba == dead:
                 environment = UnexposedCell(10*y + x, model,(x, y))
             elif rgba == surface:
