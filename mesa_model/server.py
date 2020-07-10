@@ -68,7 +68,8 @@ def canvas_repr(agent):
 			else:
 				port["Color"] = other
 				shade = "(255, 220, 48"
-			port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
+			if agent.infected:
+				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
 	return port
 
 canvas_element = CanvasGrid(canvas_repr, CovidModel.grid_width, CovidModel.grid_height, 500, 500)

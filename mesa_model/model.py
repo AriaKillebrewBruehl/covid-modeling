@@ -39,15 +39,16 @@ class CovidModel(Model):
 			)
 	
 		# Initialize agents here
-		for i in zip(range(0, 3), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
+		for i in zip(range(0, 5), [(True, False), (False, True), (False, False), (False, False), (False, False)]):
 			test_human_1 = Student(10 + i[0], (10, 10 + i[0]), self)
-			test_human_1.infect()
+			test_human_1.infected, test_human_1.recovered = i[1]
+			if test_human_1.infected == True:
+				test_human_1.contagion_counter = 14
 			self.grid.place_agent(test_human_1, (10, 10 + i[0]))
 			self.schedule.add(test_human_1)
-		'''
+		
 		convert('mesa_model/map01.png', self) # when this is used to create environment agents don't work (humans don't move, air cells don't decay)# create specified BaseEnvironment cells from image, place
 		# in environment and add to scheduler 
-		
 		'''
 		for i in range(0, grid_width):# when this is used to create environment everything works fine
 			for j in range(10, grid_height):
@@ -61,13 +62,13 @@ class CovidModel(Model):
 			for j in range(grid_width):
 				test_block = UnexposedCell(1, (j, i), self)
 				self.grid.place_agent(test_block, (j,i))
-
+'''
 		self.running = True
 		self.datacollector.collect(self)
 	def setUp(self):
 		pass
 	def step(self):
-		print("in model step") # prints always (not affected by converter funct)
+		#print("in model step") # prints always (not affected by converter funct)
 		self.schedule.step()
 		self.datacollector.collect(self)
 
