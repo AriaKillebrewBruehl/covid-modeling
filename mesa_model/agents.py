@@ -80,6 +80,9 @@ class BaseHuman(mesa.Agent):
 						self.infect()
 	def step(self):
 		#print("in step") # when converter funct is called this wont't print meaning step isn't called
+		pass
+		
+	def advance(self):
 		self.move()
 		self.update_infection()
 
@@ -99,6 +102,8 @@ class BaseEnvironment(mesa.Agent):
 
 	def step(self):
 		pass
+	def advance(self):
+		pass
 
 # added 07/03 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
@@ -115,8 +120,11 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.decay = decay
 
 	def step(self):
+		pass
+	def advance(self):
 		self.decay_cell()
 		self.infect_agents()
+
 
 	def decay_cell(self):
 		self.infected *= self.decay
@@ -140,6 +148,8 @@ class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered
 		self.cleaned = cleaned
 
 	def step(self):
+		pass
+	def advance(self):
 		self.clean()
 
 	def clean(self):
@@ -155,7 +165,9 @@ class AirCell(InfectableCell): # can be traveled through
 		self.ventilationDecay = ventilationDecay
 
 	def step(self):
-		super().step()
+		pass
+	def advacne(self):
+		super().advacne()
 		self.ventilate()
 	def ventilate(self):
 		possible_steps = self.model.grid.get_neighborhood(
@@ -192,6 +204,8 @@ class VentilatorCell(UnexposedCell):
 		self.ventilationDecay = ventilationDecay
 
 	def step(self):
+		pass
+	def advance(self):
 		self.ventilate()
 
 	def ventilate(self):
