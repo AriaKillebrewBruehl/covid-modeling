@@ -7,13 +7,14 @@ import numpy as numpy
 from mesa_model.converter import convert
 from PIL import Image
 
-def setUp(): 
+def setUp():
 	global filename
 	global num_infec_agents
 	global num_agents
 	#print("Enter name of environment file as string:")
 	#filename = str(input())
-	filename = 'mesa_model/map01.png'
+	filename = 'mesa_model/maps/map01.png'
+	# filename = 'mesa_model/maps/hallway.png'
 	print("Enter number of infected agents:")
 	num_infec_agents = int(input())
 	print("Enter number of uninfected agents:")
@@ -34,9 +35,9 @@ def get_uninfected_agents(model):
 class CovidModel(Model):
 	im = Image.open(filename) # open image file
 	grid_width, grid_height = im.size # Get the width and height of the image to iterate over
-	
 
-	def __init__(self, height=grid_height, width=grid_width): 
+
+	def __init__(self, height=grid_height, width=grid_width):
 		self.height = height
 		self.width = width
 		self.schedule = SimultaneousActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
@@ -53,12 +54,12 @@ class CovidModel(Model):
 			#	"Recovered": (add later)
 			}
 			)
-		
-		convert(filename, self) # convert environment 
+
+		convert(filename, self) # convert environment
 		# Initialize agents here
 		def rand_pos():
 			pos = random.randrange(grid_width), random.randrange(grid_height)  # get new position for agent w/in bounds of grid
-			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]: 
+			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
 				return pos
 			else:
 				return rand_pos()
@@ -81,9 +82,9 @@ class CovidModel(Model):
 				test_environment = AirCell(i * 10 + j * 10000, self, (i, j), ventilationDecay = .10)
 				if i < 10:
 					test_environment.infect()
-				self.grid.place_agent(test_environment, (i, j))				
+				self.grid.place_agent(test_environment, (i, j))
 				self.schedule.add(test_environment)
-		# creating block of unexposed cells for test purposes 
+		# creating block of unexposed cells for test purposes
 		for i in range(10):
 			for j in range(grid_width):
 				test_block = UnexposedCell(1, (j, i), self)
@@ -100,7 +101,7 @@ class CovidModel(Model):
 		pass
 
 	def run_model(self):
-		
+
 		for i in range(self.run_time):
 			self.step()
 			self.advance()
