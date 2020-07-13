@@ -52,7 +52,7 @@ def convert(filename, model):
                 environment = Door(10*y + x, model, (x, y))
                 environment.infect()
             elif rgba == window:
-                environment = Door(10*y + x, model, (x, y))
+                environment = VentilatorCell(10*y + x, model, (x, y))
             elif rgba == other:
                 environment = InfectableCell(10*y + x, model, (x, y))
             else:
