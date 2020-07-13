@@ -137,15 +137,13 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.infected *= (1 - percent)
 
 	def infect_agents(self):
-		if self.infected == False:
+		if not self.infected:
 			return 
 		else:
 			for agent in self.model.grid.get_cell_list_contents(self.pos):
 				if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
-					choice = random.randint(0, 10)
-					if choice == 1:
-						print("from environment")
-						agent.infect() # In the future, the initial amount may be important.
+					if random.random() < self.infected:
+  						agent.infect() # In the future, the initial amount may be important.
 
 class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered 
 	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, cleaningInterval = -1, cleaned = True):
