@@ -3,9 +3,11 @@ import numpy as np
 import numpy.linalg
 import numpy.random
 import random
+#from mesa_model.model import get_dimensions for some reason when I try to use this helper funct I get errors from convert saying AirCell isn't defined 
 
 grid_width = 32
 grid_height = 32
+#grid_width, grid_height = get_dimensions()
 
 frames_per_day = 2
 
@@ -68,13 +70,12 @@ class BaseHuman(mesa.Agent):
 		self.model.grid.move_agent(self, self.get_new_pos_far())
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
 			if self.infected == False:
-				if neighbor.infected  and isinstance(neighbor, BaseHuman):
+				if neighbor.infected and isinstance(neighbor, BaseHuman):
 					print("from human")
 					self.infect()
 					# let infect() determmine if they should move from recovered to another category
 				if neighbor.infected and isinstance(neighbor, AirCell):
 					choice = random.randint(0, 4)
-					
 					if choice == 1:
 						print("from air" + str(choice))
 						self.infect()
@@ -196,8 +197,6 @@ class Door(SurfaceCell): # upon interaction telleports agent to other side
 	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelihood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
 		super().__init__(unique_id, model, pos, infected, transmissionLikelihood, decay, cleaningInterval, cleaned)
 
-
-# this one seemed a little complicated and I wasn't quite sure how to appraoch it 
 class VentilatorCell(UnexposedCell):
 	def __init__(self, unique_id, model, pos=(0,0), ventilationDecay=lambda rx, ry: 1 / (np.linalg.norm([rx, ry], 2)), maxRadius = 5):
 		super().__init__(unique_id,model)
