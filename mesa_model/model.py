@@ -16,13 +16,13 @@ def setUp():
 	#filename = str(input())
 	filename = 'mesa_model/maps/map01.png'
 	# filename = 'mesa_model/maps/hallway.png'
-	print("Enter number of infected agents:")
-	num_infec_agents = int(input())
+	#print("Enter number of infected agents:")
+	#num_infec_agents = int(input())
 	print("Enter number of uninfected agents:")
-	num_agents = int(input())
+	#num_agents = int(input())
 	print("Enter number of recovered agents:")
-	num_rec_agents = int(input())
-	return filename, num_infec_agents, num_agents, num_rec_agents
+	#num_rec_agents = int(input())
+	return filename #, num_infec_agents, num_agents, num_rec_agents
 
 setUp()
 
@@ -47,7 +47,7 @@ class CovidModel(Model):
 	#grid_width, grid_height = im.size # Get the width and height of the image to iterate over
 	grid_width, grid_height = get_dimensions()
 
-	def __init__(self, height=grid_height, width=grid_width):
+	def __init__(self, height=grid_height, width=grid_width, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20):
 		self.height = height
 		self.width = width
 		self.schedule = SimultaneousActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
@@ -73,7 +73,7 @@ class CovidModel(Model):
 				return pos
 			else:
 				return rand_pos()
-		for i in range(0, num_agents):
+		for i in range(0, num_uninfec_agents):
 			pos = rand_pos()
 			test_human_1 = Student(1000 + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = False, False
@@ -81,14 +81,14 @@ class CovidModel(Model):
 			self.schedule.add(test_human_1)
 		for i in range(0, num_infec_agents):
 			pos = rand_pos()
-			test_human_1 = Student(1000 + num_agents + i, pos, self)
+			test_human_1 = Student(1000 + num_uninfec_agents + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = True, False
 			test_human_1.contagion_counter = 14
 			self.grid.place_agent(test_human_1, pos)
 			self.schedule.add(test_human_1)
 		for i in range(0, num_rec_agents):
 			pos = rand_pos()
-			test_human_1 = Student(1000 + num_agents + num_infec_agents + i, pos, self)
+			test_human_1 = Student(1000 + num_uninfec_agents + num_infec_agents + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = False, True
 			self.grid.place_agent(test_human_1, pos)
 			self.schedule.add(test_human_1)
