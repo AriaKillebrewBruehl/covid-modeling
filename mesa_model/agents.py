@@ -13,7 +13,7 @@ grid_height = 31
 frames_per_day = 2
 
 class BaseHuman(mesa.Agent):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=False, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
 		super().__init__(unique_id, model)
 		self.infected = infected
 		self.masked = masked
@@ -22,18 +22,36 @@ class BaseHuman(mesa.Agent):
 		self.immune = immune
 		self.immunocompromised = immunocompromised
 		self.susceptibility = np.double(susceptibility)
+		self.caution_level = caution_level
 		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.quarantined = quarantined
 		self.recovered = recovered
 		self.pos = pos
 
-	def infect(self):
+	def infect(self, contact, neighbor): 
+		chance = 1.0
 		if self.immune == True or self.infected == True:
 			return # don't infect if we've recovered or already infected
-		self.infected = True
-		print(str(self.unique_id) + " infected")
-		self.contagion_counter = 14 # todo: find a distribution
-
+		if self.caution_level == 0: # chance of infection based off of how caution agent is 
+			if contact == "human": # varying chance based on how the agent came in contact with virus 
+				chance = neighbor.contagion_counter / 14 # assumes infected people are most viral at start of infected period 
+			else:
+				chance = 0.1
+		elif self.caution_level == 1:
+			if contact == "human":
+				chance = (neighbor.contagion_counter / 14) * 0.50
+			else:
+				chance = 0.01
+		elif self.caution_level == 2:
+			if contact == "human":
+				chance = (neighbor.contagion_counter / 14) * 0.25
+			else:
+				chance = 0.001
+		if random.random() < chance:
+			self.infected = True
+			self.contagion_counter = 14 # todo: find a distribution
+		else:
+			return 
 	def update_infection(self):
 		if self.infected == False:
 			return
@@ -67,27 +85,29 @@ class BaseHuman(mesa.Agent):
 			return self.get_new_pos_far()
 
 	def move(self):
-		#print("in move") # when converter funct is called this wont't print meaning move isn't called
 		self.model.grid.move_agent(self, self.get_new_pos_far())
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
-			if not self.infected:
+			if not self.infected: # what will happen to uninfected agents
+				# contraction from other humans
 				if neighbor.infected and isinstance(neighbor, BaseHuman):
-					print("from human")
-					self.infect()
-					# let infect() determmine if they should move from recovered to another category
-				elif neighbor.infected:
+					self.infect("human", neighbor) # let infect() determmine if they should move from recovered to another category
+				# contraction from environment 
+				elif neighbor.infected and isinstance(neighbor, InfectableCell):
 					choice = random.randint(0, 4)
 					if choice == 1:
-						print("from air" + str(choice))
-						self.infect()
-			if self.infected:
+						self.infect("environment", neighbor)
+			if self.infected: # what will infected agents do
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
-					if random.random() < 0.01: # agent has a 10% chance of infecting air around them 
-  						neighbor.infect() # In the future, the initial amount may be important.
+					chance = 1.0
+					if self.masked:
+						chance = (self.contagion_counter / 14) * 0.01 # lower chance of infecting environment if masked 
+					if not self.masked: 
+						chance = (self.contagion_counter / 14) * 0.1
+					if random.random() < chance: 
+						neighbor.infect() # In the future, the initial amount may be important.
 
 
 	def step(self):
-		#print("in step") # when converter funct is called this wont't print meaning step isn't called
 		pass
 		
 	def advance(self):
@@ -95,12 +115,12 @@ class BaseHuman(mesa.Agent):
 		self.update_infection()
 
 class Student(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
-		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, schedule, quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
+		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, caution_level, schedule, quarantined)
 
 class Faculty(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
-		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, schedule, quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
+		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, caution_level, schedule, quarantined)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):

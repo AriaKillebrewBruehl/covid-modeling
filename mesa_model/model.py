@@ -77,12 +77,22 @@ class CovidModel(Model):
 			pos = rand_pos()
 			test_human_1 = Student(1000 + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = False, False
+			test_human_1.caution_level = random.randint(0, 3)
+			if test_human_1.caution_level == 0:
+				test_human_1.masked = False
+			else:
+				test_human_1.masked = True
 			self.grid.place_agent(test_human_1, pos)
 			self.schedule.add(test_human_1)
 		for i in range(0, num_infec_agents):
 			pos = rand_pos()
 			test_human_1 = Student(1000 + num_uninfec_agents + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = True, False
+			test_human_1.caution_level = random.randint(0, 3)
+			if test_human_1.caution_level == 0:
+				test_human_1.masked = False
+			else:
+				test_human_1.masked = True
 			test_human_1.contagion_counter = 14
 			self.grid.place_agent(test_human_1, pos)
 			self.schedule.add(test_human_1)
@@ -90,6 +100,11 @@ class CovidModel(Model):
 			pos = rand_pos()
 			test_human_1 = Student(1000 + num_uninfec_agents + num_infec_agents + i, pos, self)
 			test_human_1.infected, test_human_1.recovered = False, True
+			test_human_1.caution_level = random.randint(0, 3)
+			if test_human_1.caution_level == 0:
+				test_human_1.masked = False
+			else:
+				test_human_1.masked = True
 			self.grid.place_agent(test_human_1, pos)
 			self.schedule.add(test_human_1)
 		'''
