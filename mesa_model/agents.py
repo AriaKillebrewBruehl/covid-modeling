@@ -3,10 +3,11 @@ import numpy as np
 import numpy.linalg
 import numpy.random
 import random
-#from mesa_model.model import get_dimensions for some reason when I try to use this helper funct I get errors from convert saying AirCell isn't defined 
+#from mesa_model.model import * 
+#from mesa_model.model import get_dimensions # for some reason when I try to use this helper funct I get errors from convert saying AirCell isn't defined 
 
-grid_width = 32
-grid_height = 32
+grid_width = 31
+grid_height = 31
 #grid_width, grid_height = get_dimensions()
 
 frames_per_day = 2
@@ -69,7 +70,7 @@ class BaseHuman(mesa.Agent):
 		#print("in move") # when converter funct is called this wont't print meaning move isn't called
 		self.model.grid.move_agent(self, self.get_new_pos_far())
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
-			if self.infected == False:
+			if not self.infected:
 				if neighbor.infected and isinstance(neighbor, BaseHuman):
 					print("from human")
 					self.infect()
@@ -79,6 +80,12 @@ class BaseHuman(mesa.Agent):
 					if choice == 1:
 						print("from air" + str(choice))
 						self.infect()
+			if self.infected:
+				if not neighbor.infected and isinstance(neighbor, InfectableCell):
+					if random.random() < 0.01: # agent has a 10% chance of infecting air around them 
+  						neighbor.infect() # In the future, the initial amount may be important.
+
+
 	def step(self):
 		#print("in step") # when converter funct is called this wont't print meaning step isn't called
 		pass
@@ -114,9 +121,10 @@ class UnexposedCell(BaseEnvironment): # unreachable by agents
 
 class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces, etc
 	# decay in all cases is how much is left after one iteratoin
-	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = .50):
+	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), contagion_counter=0, transmissionLikelihood = 1, decay = .50):
 		super().__init__(unique_id, model, pos) 
 		self.infected = infected
+		self.contagion_counter = contagion_counter
 		self.transmissionLikelihood = transmissionLikelihood
 		self.decay = decay
 
@@ -129,12 +137,22 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 
 	def decay_cell(self):
 		self.infected *= self.decay
+		if self.infected < 0.1: # infected air only lasts for ~ 4 steps 
+			self.infected = False
+			pass
+		# if CovidModel.schedule.steps % 14 == 0: 
+			# self.cleanse()
+
+		
 
 	def infect(self, amount = 1.0):
 		self.infected = min(self.infected + amount, 1.0) # Make sure we don't go past maximum capacity.
+	
 
 	def cleanse(self, percent = 1.0):
 		self.infected *= (1 - percent)
+		if self.infected < 0.001:
+			self.infected == False
 
 	def infect_agents(self):
 		if not self.infected:

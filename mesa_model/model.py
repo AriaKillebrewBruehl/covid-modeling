@@ -14,13 +14,13 @@ def setUp():
 	global num_rec_agents
 	#print("Enter name of environment file:")
 	#filename = str(input())
-	filename = 'mesa_model/maps/map01.png'
+	filename = 'mesa_model/maps/doors_simple.png'
 	# filename = 'mesa_model/maps/hallway.png'
 	#print("Enter number of infected agents:")
 	#num_infec_agents = int(input())
-	print("Enter number of uninfected agents:")
+	# print("Enter number of uninfected agents:")
 	#num_agents = int(input())
-	print("Enter number of recovered agents:")
+	# print("Enter number of recovered agents:")
 	#num_rec_agents = int(input())
 	return filename #, num_infec_agents, num_agents, num_rec_agents
 
