@@ -86,7 +86,7 @@ chart_element = ChartModule(
 model_params = {
 	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 20, description="Initial Infected"),
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
-	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered")
+	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered"),
 }
 
 server = ModularServer(CovidModel, [canvas_element, chart_element], "COVID-19 Classroom Transmission Model", model_params=model_params)

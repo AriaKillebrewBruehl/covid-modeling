@@ -7,21 +7,15 @@ import numpy as numpy
 from mesa_model.converter import convert
 from PIL import Image
 
+# CONSTANTS --------------------
+max_caution_level = 2
+percent_immunocompromised = 0.05 # 5 % of population is immunocomprimised 
+# ------------------------------
 def setUp():
 	global filename
-	global num_infec_agents
-	global num_agents
-	global num_rec_agents
 	#print("Enter name of environment file:")
 	#filename = str(input())
 	filename = 'mesa_model/maps/doors_simple.png'
-	# filename = 'mesa_model/maps/hallway.png'
-	#print("Enter number of infected agents:")
-	#num_infec_agents = int(input())
-	# print("Enter number of uninfected agents:")
-	#num_agents = int(input())
-	# print("Enter number of recovered agents:")
-	#num_rec_agents = int(input())
 	return filename #, num_infec_agents, num_agents, num_rec_agents
 
 setUp()
@@ -43,8 +37,6 @@ def get_uninfected_agents(model):
 	return len([x for x in model.schedule.agents if isinstance(x, BaseHuman) and x.recovered == False and x.infected == False])
 
 class CovidModel(Model):
-	#im = Image.open(filename) # open image file
-	#grid_width, grid_height = im.size # Get the width and height of the image to iterate over
 	grid_width, grid_height = get_dimensions()
 
 	def __init__(self, height=grid_height, width=grid_width, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20):
@@ -73,58 +65,38 @@ class CovidModel(Model):
 				return pos
 			else:
 				return rand_pos()
+		def set_up_agent(i, ag_type):
+			pos = rand_pos() # get random position on grid 
+			new_human = Student(1000 + i, pos, self) # create new Student agent 
+			if ag_type == "uninfec":
+				new_human.infected, new_human.recovered = False, False # set state of agent 
+			elif ag_type == "infec":
+				new_human.infected, new_human.recovered = True, False
+			elif ag_type == "rec":
+				new_human.infected, new_human.recovered = False, True
+			new_human.caution_level = random.randint(0, max_caution_level) # create agents of different caution levels
+			if new_human.caution_level == 0:
+				new_human.masked = False
+			else:
+				new_human.masked = True
+			if random.random() < percent_immunocompromised: # create immunocomprimised agents
+				new_human.immunocompromised = True
+			else:
+				new_human.immunocompromised = False
+			self.grid.place_agent(new_human, pos) # place agent on grid 
+			self.schedule.add(new_human) # add agent to schedule
+
 		for i in range(0, num_uninfec_agents):
-			pos = rand_pos()
-			test_human_1 = Student(1000 + i, pos, self)
-			test_human_1.infected, test_human_1.recovered = False, False
-			test_human_1.caution_level = random.randint(0, 3)
-			if test_human_1.caution_level == 0:
-				test_human_1.masked = False
-			else:
-				test_human_1.masked = True
-			self.grid.place_agent(test_human_1, pos)
-			self.schedule.add(test_human_1)
+			set_up_agent(i, "uninfec")
 		for i in range(0, num_infec_agents):
-			pos = rand_pos()
-			test_human_1 = Student(1000 + num_uninfec_agents + i, pos, self)
-			test_human_1.infected, test_human_1.recovered = True, False
-			test_human_1.caution_level = random.randint(0, 3)
-			if test_human_1.caution_level == 0:
-				test_human_1.masked = False
-			else:
-				test_human_1.masked = True
-			test_human_1.contagion_counter = 14
-			self.grid.place_agent(test_human_1, pos)
-			self.schedule.add(test_human_1)
+			set_up_agent(i + num_uninfec_agents, "infec")
 		for i in range(0, num_rec_agents):
-			pos = rand_pos()
-			test_human_1 = Student(1000 + num_uninfec_agents + num_infec_agents + i, pos, self)
-			test_human_1.infected, test_human_1.recovered = False, True
-			test_human_1.caution_level = random.randint(0, 3)
-			if test_human_1.caution_level == 0:
-				test_human_1.masked = False
-			else:
-				test_human_1.masked = True
-			self.grid.place_agent(test_human_1, pos)
-			self.schedule.add(test_human_1)
-		'''
-		for i in range(0, grid_width):# when this is used to create environment everything works fine
-			for j in range(10, grid_height):
-				test_environment = AirCell(i * 10 + j * 10000, self, (i, j), ventilationDecay = .10)
-				if i < 10:
-					test_environment.infect()
-				self.grid.place_agent(test_environment, (i, j))
-				self.schedule.add(test_environment)
-		# creating block of unexposed cells for test purposes
-		for i in range(10):
-			for j in range(grid_width):
-				test_block = UnexposedCell(1, (j, i), self)
-				self.grid.place_agent(test_block, (j,i))
-		'''
+			set_up_agent(i + num_uninfec_agents + num_infec_agents, "rec")
+
 		self.running = True
 		self.datacollector.collect(self)
-	def setUp(self):
-		pass
+
+
 	def step(self):
 		self.schedule.step()
 		self.datacollector.collect(self)
@@ -132,7 +104,6 @@ class CovidModel(Model):
 		pass
 
 	def run_model(self):
-
 		for i in range(self.run_time):
 			self.step()
 			self.advance()
