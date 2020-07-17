@@ -74,7 +74,7 @@ class BaseHuman(mesa.Agent):
 		self.immune = True
 
 	def quarantine(self):
-		# last_pos = self.pos 
+		last_pos = self.pos 
 		self.model.grid.remove_agent(self)
 		self.quarantined = True
 		if self.contagion_counter <= 0: # set as recovered 
