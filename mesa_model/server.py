@@ -49,26 +49,27 @@ def canvas_repr(agent):
 		# specify color of each environment aspect 
 		if isinstance(agent, UnexposedCell):
 			if isinstance(agent, VentilatorCell):
-				port["Color"] = window
+				color = window
 				shade = "(176, 119, 255"
 			else:
-				port["Color"] = inaccessible
+				color = inaccessible
 				shade = "(252, 100, 24"
 		elif isinstance(agent, InfectableCell):
 			if isinstance(agent, SurfaceCell):
 				if isinstance(agent, Door):
-					port["Color"] = door
+					color = door
 					shade = "(125, 70, 235"
 				else:
-					port["Color"] = surface 
+					color = surface 
 					shade = "(128, 128, 128"
 			elif isinstance(agent, AirCell):
-				port["Color"] = air 
+				color = air 
 				shade = "(255, 0, 0"
 			else:
-				port["Color"] = other
+				color = other
 				shade = "(255, 0, 0"
-			if agent.infected:
+		port["Color"] = color
+		if agent.infected:
 				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
 	return port
 
