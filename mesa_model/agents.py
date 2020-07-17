@@ -3,11 +3,7 @@ import numpy as np
 import numpy.linalg
 import numpy.random
 import random
-#from mesa_model.model import get_dimensions for some reason when I try to use this helper funct I get errors from convert saying AirCell isn't defined 
 
-grid_width = 32
-grid_height = 32
-#grid_width, grid_height = get_dimensions()
 
 frames_per_day = 2
 
@@ -57,7 +53,7 @@ class BaseHuman(mesa.Agent):
 			return self.get_new_pos_near()
 	# agents will move randomly throughout grid
 	def get_new_pos_far(self):
-		new_position = random.randrange(grid_width), random.randrange(grid_height)  # get new position for agent w/in bounds of grid
+		new_position = random.randrange(self.model.width), random.randrange(self.model.height)  # get new position for agent w/in bounds of grid
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
 			#say get_cell_list_contents is unexposed cell but agent will move there any way
 			#print(new_position) # when converter used for environment doesn't get printed meaning get_new_pos isn't called
@@ -67,7 +63,8 @@ class BaseHuman(mesa.Agent):
 
 	def move(self):
 		#print("in move") # when converter funct is called this wont't print meaning move isn't called
-		self.model.grid.move_agent(self, self.get_new_pos_far())
+		self.model.grid.move_agent(self, self.get_new_pos_far()
+			)
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
 			if self.infected == False:
 				if neighbor.infected and isinstance(neighbor, BaseHuman):
@@ -213,8 +210,8 @@ class VentilatorCell(UnexposedCell):
 
 	def ventilate(self):
 		# rough outline complete later
-		for x in range(grid_width):
-			for y in range(grid_height):
+		for x in range(self.model.width):
+			for y in range(self.model.height):
 				rx, ry = tuple(np.array(self.pos) - np.array((x, y)))
 				cont = self.model.grid.get_cell_list_contents((x, y))
 				cell.cleanse(self.ventilationDecay(rx, ry))

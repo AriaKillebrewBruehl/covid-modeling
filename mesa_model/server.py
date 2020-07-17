@@ -72,7 +72,7 @@ def canvas_repr(agent):
 				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
 	return port
 
-canvas_element = CanvasGrid(canvas_repr, CovidModel.grid_width, CovidModel.grid_height, 500, 500)
+
 
 chart_element = ChartModule(
 		[
@@ -85,7 +85,14 @@ chart_element = ChartModule(
 model_params = {
 	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 20, description="Initial Infected"),
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
-	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered")
+	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered"),
+	"filename" : "mesa_model/maps/map01.png"
 }
 
+w, h = CovidModel.size(model_params["filename"])
+
+canvas_element = CanvasGrid(canvas_repr, w, h, 500, 500)
+
 server = ModularServer(CovidModel, [canvas_element, chart_element], "COVID-19 Classroom Transmission Model", model_params=model_params)
+
+print(type(server.model_cls), dir(server.model_cls))
