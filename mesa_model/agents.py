@@ -95,9 +95,8 @@ class BaseHuman(mesa.Agent):
 			return
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
 		if self.infected and self.symptomatic and self.caution_level > 1: # if cautious person and symptomatic quarantine
-			#self.quarantine() # currently called even if already quarantined, is this okay?
-			#print("quarantined")
-			pass 
+			self.quarantine() # currently called even if already quarantined, is this okay?
+			print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			self.recover()
 
@@ -159,7 +158,6 @@ class BaseEnvironment(mesa.Agent):
 	def advance(self):
 		pass
 
-# added 07/03 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
 	def __intit__(self, unique_id, model, pos=(0,0)):
 		super().__init__(unique_id,model)
@@ -231,8 +229,8 @@ class AirCell(InfectableCell): # can be traveled through
 
 	def step(self):
 		pass
-	def advacne(self):
-		super().advacne()
+	def advance(self):
+		super().advance()
 		self.ventilate()
 	def ventilate(self):
 		possible_steps = self.model.grid.get_neighborhood(
@@ -254,7 +252,7 @@ class AirCell(InfectableCell): # can be traveled through
 			if isinstance(t, InfectableCell):
 				t.infect(self.infected * (1 - self.ventilationDecay)) # maybe make this so that the amount of particulates lost = particulate gains in other cells
 			if isinstance(t, BaseHuman):
-				t.infect()
+				t.infect("environment", self)
 		self.infected *= self.ventilationDecay
 
 class Door(SurfaceCell): # upon interaction telleports agent to other side 
