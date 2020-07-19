@@ -34,12 +34,9 @@ class BaseHuman(mesa.Agent):
 		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.pos = pos
 		self.last_pos = None
-		self.quarantined = quarantined
 		self.unique_id = unique_id
-		'''
 		if quarantined:
 			self.quarantine(initialized=False)
-			'''
 
 	def init_infect(self):
 		self.infected = True
@@ -121,7 +118,7 @@ class BaseHuman(mesa.Agent):
 			include_center=False)
 		new_position = self.random.choice(possible_steps)	
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
-			if new_position == None:
+			if new_position is None:
 				print("new_pos of agent" + str(self.unique_id) + " is None")
 			return new_position
 		else:
