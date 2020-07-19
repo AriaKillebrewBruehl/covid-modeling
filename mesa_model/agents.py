@@ -11,8 +11,8 @@ c_l2_mult = 0.25            # how much more likely are c_l2 people to get sick
 percent_asymptomatic = 0.38 # what percent of people will show symptoms
 masked_infect_rate = 0.01   # how likey is a masked person to infect a cell 
 unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
-infection_duration = 14
-contagion_symp = 14         # how ling are symptomatic people contagious 
+infection_duration = 14      # how long are symptomatic people contagious 
+contagion_symp = 14
 contagion_asymp = 28        # how long are asymptomatic people contagious 
 # ------------------------------
 class BaseHuman(mesa.Agent):
@@ -34,18 +34,22 @@ class BaseHuman(mesa.Agent):
 		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.pos = pos
 		self.last_pos = None
+		self.quarantined = quarantined
+		self.unique_id = unique_id
+		'''
 		if quarantined:
 			self.quarantine(initialized=False)
+			'''
 
 	def init_infect(self):
 		self.infected = True
 		self.contagion_counter = infection_duration # todo: find a distribution
 		self.severity = random.random() # give agent random severity 
-		if self.severity < percent_asymptomatic: # 90 % of people will be symptomatic todo: find more reasonable numbers
+		if self.severity < percent_asymptomatic: # 38 % of people will be asymptomatic todo: find more reasonable numbers
 			self.contagion_counter = contagion_asymp # todo: find a distribution
 			self.symptomatic = False
 		else: 
-			self.contagion_counter = contagion_symp # todo: find a distribution
+			# self.contagion_counter = contagion_symp # todo: find a distribution
 			self.symptomatic = True
 
 	def infect(self, contact="env", neighbor=None): 
@@ -74,6 +78,7 @@ class BaseHuman(mesa.Agent):
 			self.init_infect()
 		else:
 			return
+
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
@@ -96,11 +101,11 @@ class BaseHuman(mesa.Agent):
 		self.quarantined = True
 
 	def update_infection(self):
-		if self.infected == False: # if not infected don't do anything 
+		if not self.infected: # if not infected don't do anything 
 			return
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
-		if self.infected and self.symptomatic and self.caution_level > 0 and self.quarantined == False: # if cautious person and symptomatic quarantine
-			self.quarantine() # currently called even if already quarantined, is this okay?
+		if self.infected and self.symptomatic and self.caution_level > 0: # if cautious person and symptomatic quarantine
+			self.quarantine() #  and not self.quarantined
 			print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			if self.quarantined == True:
@@ -116,6 +121,8 @@ class BaseHuman(mesa.Agent):
 			include_center=False)
 		new_position = self.random.choice(possible_steps)	
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
+			if new_position == None:
+				print("new_pos of agent" + str(self.unique_id) + " is None")
 			return new_position
 		else:
 			return self.get_new_pos_near()
@@ -143,10 +150,9 @@ class BaseHuman(mesa.Agent):
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
 					self.infect_cell(neighbor)
 	def step(self):
-		pass
-	def advance(self):
 		self.move()
 		self.update_infection()
+		
 class Student(BaseHuman):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
 		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, severity, caution_level, schedule, quarantined)
@@ -162,8 +168,6 @@ class BaseEnvironment(mesa.Agent):
 		self.infected = False # default
 
 	def step(self):
-		pass
-	def advance(self):
 		pass
 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
@@ -206,10 +210,10 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 						agent.infect("environment", self) # In the future, the initial amount may be important.
 
 	def step(self):
-		pass
-	def advance(self):
 		self.decay_cell()
 		self.infect_agents()
+
+		
 
 class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered 
 	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, cleaningInterval = -1, cleaned = True):
@@ -219,9 +223,8 @@ class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered
 		self.cleaned = cleaned
 
 	def step(self):
-		pass
-	def advance(self):
 		self.clean()
+		
 
 	def clean(self):
 		self.lastCleaned += 1
@@ -236,10 +239,9 @@ class AirCell(InfectableCell): # can be traveled through
 		self.ventilationDecay = ventilationDecay
 
 	def step(self):
-		pass
-	def advance(self):
 		super().advance()
 		self.ventilate()
+		
 
 	def ventilate(self):
 		possible_steps = self.model.grid.get_neighborhood(
@@ -265,7 +267,7 @@ class AirCell(InfectableCell): # can be traveled through
 				part_total += self.infected * (1 - self.ventilationDecay)
 				t.infect(self.infected * (1 - self.ventilationDecay)) # maybe make this so that the amount of particulates lost = particulate gains in other cells
 			if isinstance(t, BaseHuman):
-				t.infect()
+				t.infect("environment", self)
 		self.infected -= part_total
 
 class Door(SurfaceCell): # upon interaction telleports agent to other side 
@@ -278,9 +280,8 @@ class VentilatorCell(UnexposedCell):
 		self.ventilationDecay = ventilationDecay
 
 	def step(self):
-		pass
-	def advance(self):
 		self.ventilate()
+		
 
 	def ventilate(self):
 		# rough outline complete later

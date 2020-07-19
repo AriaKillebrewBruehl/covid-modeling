@@ -1,6 +1,6 @@
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
-from mesa.time import SimultaneousActivation #RandomActivation
+from mesa.time import RandomActivation #RandomActivation
 from mesa import Model
 import numpy as numpy
 from mesa_model.converter import convert
@@ -33,7 +33,7 @@ class CovidModel(Model):
 
 		self.filename = filename
 		self.width, self.height = im.size # Get the width and height of the image to iterate over
-		self.schedule = SimultaneousActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
+		self.schedule = RandomActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
 		self.grid = MultiGrid(width=self.width, height=self.height, torus=False) # last arg prevents wraparound
 		self.datacollector = DataCollector(
 			model_reporters={
@@ -96,10 +96,11 @@ class CovidModel(Model):
 		self.datacollector.collect(self)
 
 	def step(self):
+		for i, agent in enumerate(self.schedule.agents):
+			if agent.pos is None:
+				print(f'Loc {i} : {type(agent)} {agent.unique_id} {agent.pos}')
 		self.schedule.step()
 		self.datacollector.collect(self)
-	def advance(self):
-		pass
 
 	def run_model(self):
 		for i in range(self.run_time):
