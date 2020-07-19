@@ -88,7 +88,7 @@ model_params = {
 	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 20, description="Initial Infected"),
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
 	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered"),
-	"filename" : "mesa_model/maps/map01.png"
+	"filename" : "mesa_model/maps/doors_simple.png"
 }
 
 w, h = CovidModel.size(model_params["filename"])

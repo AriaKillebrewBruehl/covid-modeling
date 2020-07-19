@@ -4,22 +4,27 @@ import numpy.linalg
 import numpy.random
 import random
 frames_per_day = 2
-immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
+# immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
 c_l0_mult = 1.0             # how much more likely are c_l0 people to get sick
 c_l1_mult = 0.5             # how much more likely are c_l1 people to get sick
 c_l2_mult = 0.25            # how much more likely are c_l2 people to get sick
-percent_symptomatic = 0.90  # what percent of people will show symptoms
+percent_asymptomatic = 0.38 # what percent of people will show symptoms
 masked_infect_rate = 0.01   # how likey is a masked person to infect a cell 
 unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
 infection_duration = 14
+contagion_symp = 14         # how ling are symptomatic people contagious 
+contagion_asymp = 28        # how long are asymptomatic people contagious 
 # ------------------------------
 class BaseHuman(mesa.Agent):
-	def __init__(self, unique_id, model, caution_level = 1, masked=False, immunocompromised=False, susceptibility=1, infected=False, symptomatic = False, incubation_period=0, contagion_counter=0, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]], pos=(0,0)):
+	def __init__(self, unique_id, model, caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]], pos=(0,0)):
 		super().__init__(unique_id, model)
 		self.caution_level = caution_level
 		self.masked = masked
+		'''
 		self.immunocompromised = immunocompromised
 		self.susceptibility = np.double(susceptibility)
+		'''
+		self.severity = np.double(severity)
 		self.infected = infected
 		self.symptomatic = symptomatic 
 		self.incubation_period = incubation_period 
@@ -35,14 +40,19 @@ class BaseHuman(mesa.Agent):
 	def init_infect(self):
 		self.infected = True
 		self.contagion_counter = infection_duration # todo: find a distribution
-		if random.random() < percent_symptomatic: # 90 % of people will be symptomatic todo: find more reasonable numbers
+		self.severity = random.random() # give agent random severity 
+		if self.severity < percent_asymptomatic: # 90 % of people will be symptomatic todo: find more reasonable numbers
+			self.contagion_counter = contagion_asymp # todo: find a distribution
+			self.symptomatic = False
+		else: 
+			self.contagion_counter = contagion_symp # todo: find a distribution
 			self.symptomatic = True
 
 	def infect(self, contact="env", neighbor=None): 
 		chance = 1.0 # default chance 
-		increase = 1.0 # default increse in contraction 
-		if self.immunocompromised:
-			increase = immuno_increase # immunocomprimised peopel have greater chance at infection 
+		increase = 1.0 # default increase in contraction 
+		# if self.immunocompromised:
+		#	increase = immuno_increase # immunocomprimised peopel have greater chance at infection 
 		if self.immune == True or self.infected == True:
 			return # don't infect if we've recovered or already infected
 		if self.caution_level == 0: # chance of infection based off of how caution agent is 
@@ -67,9 +77,9 @@ class BaseHuman(mesa.Agent):
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
-			chance = (self.contagion_counter / infection_duration) * masked_infect_rate # lower chance of infecting environment if masked 
+			chance = 1#(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
 		if not self.masked: 
-			chance = (self.contagion_counter / infection_duration) * unmasked_infect_rate
+			chance = 1#(self.contagion_counter / 14) * unmasked_infect_rate
 		if random.random() < chance: 
 			neighbor.infect() # In the future, the initial amount may be important.
 
@@ -91,6 +101,7 @@ class BaseHuman(mesa.Agent):
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
 		if self.infected and self.symptomatic and self.caution_level > 0 and self.quarantined == False: # if cautious person and symptomatic quarantine
 			self.quarantine() # currently called even if already quarantined, is this okay?
+			print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			if self.quarantined == True:
 				self.model.grid.place_agent(self, self.last_pos)
@@ -119,7 +130,7 @@ class BaseHuman(mesa.Agent):
 			return self.get_new_pos_far()
 
 	def move(self):
-		self.model.grid.move_agent(self, self.get_new_pos_far())
+		self.model.grid.move_agent(self, self.get_new_pos_near())
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
 			if not self.infected: # what will happen to uninfected agents
 				# contraction from other humans
@@ -137,12 +148,12 @@ class BaseHuman(mesa.Agent):
 		self.move()
 		self.update_infection()
 class Student(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
-		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, caution_level, schedule, quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
+		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, severity, caution_level, schedule, quarantined)
 
 class Faculty(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=0, immune=False, immunocompromised=False, susceptibility=1, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
-		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, immunocompromised, susceptibility, caution_level, schedule, quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, caution_level = 1, schedule=[[0, 0, 0]], quarantined=False, recovered=False):
+		super().__init__(unique_id, pos, model, infected, masked, incubation_period, contagion_counter, immune, severity, caution_level, schedule, quarantined)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):
@@ -155,7 +166,6 @@ class BaseEnvironment(mesa.Agent):
 	def advance(self):
 		pass
 
-# added 07/03 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
 	def __intit__(self, unique_id, model, pos=(0,0)):
 		super().__init__(unique_id,model)
@@ -193,7 +203,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 			for agent in self.model.grid.get_cell_list_contents(self.pos):
 				if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
 					if random.random() < self.infected:
-						agent.infect() # In the future, the initial amount may be important.
+						agent.infect("environment", self) # In the future, the initial amount may be important.
 
 	def step(self):
 		pass

@@ -1,4 +1,3 @@
-
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from mesa.time import SimultaneousActivation #RandomActivation
@@ -26,29 +25,14 @@ def get_uninfected_agents(model):
 	return len([x for x in model.schedule.agents if isinstance(x, BaseHuman) and x.recovered == False and x.infected == False])
 
 class CovidModel(Model):
-
-
 	def size(filename):
 		return Image.open(filename).size
 
 	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20):
-		#global num_infec_agents
-		#global num_agents
-		#global num_rec_agents
-		#print("Enter name of environment file:")
-		#filename = str(input())
-		# filename = 'mesa_model/maps/hallway.png'
-		#print("Enter number of infected agents:")
-		#num_infec_agents = int(input())
-		#print("Enter number of uninfected agents:")
-		#num_agents = int(input())
-		#print("Enter number of recovered agents:")
-		#num_rec_agents = int(input())
-
 		im = Image.open(filename) # open image file
+
 		self.filename = filename
 		self.width, self.height = im.size # Get the width and height of the image to iterate over
-
 		self.schedule = SimultaneousActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
 		self.grid = MultiGrid(width=self.width, height=self.height, torus=False) # last arg prevents wraparound
 		self.datacollector = DataCollector(
@@ -72,6 +56,12 @@ class CovidModel(Model):
 				return pos
 			else:
 				return rand_pos()
+		def lev0_human(agent):
+			self.masked = False
+		def lev1_human(agent):
+			self.masked = True
+		def lev2_human(agent):
+			self.masked = True 
 		def set_up_agent(i, ag_type):
 			pos = rand_pos() # get random position on grid 
 			new_human = Student(1000 + i, pos, self) # create new Student agent 
@@ -83,9 +73,11 @@ class CovidModel(Model):
 				new_human.infected, new_human.recovered = False, True
 			new_human.caution_level = random.randint(0, max_caution_level) # create agents of different caution levels
 			if new_human.caution_level == 0:
-				new_human.masked = False
-			else:
-				new_human.masked = True
+				lev0_human(new_human)
+			elif new_human.caution_level == 1:
+				lev1_human(new_human)
+			elif new_human.caution_level == 2:
+				lev2_human(new_human)
 			if random.random() < percent_immunocompromised: # create immunocomprimised agents
 				new_human.immunocompromised = True
 			else:
@@ -102,7 +94,6 @@ class CovidModel(Model):
 
 		self.running = True
 		self.datacollector.collect(self)
-
 
 	def step(self):
 		self.schedule.step()
