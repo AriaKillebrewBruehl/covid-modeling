@@ -78,7 +78,7 @@ class CovidModel(Model):
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
 			elif ag_type == "infec":
-				new_human.infected, new_human.recovered = True, False
+				new_human.init_infect() # needs deliberate setup
 			elif ag_type == "rec":
 				new_human.infected, new_human.recovered = False, True
 			new_human.caution_level = random.randint(0, max_caution_level) # create agents of different caution levels

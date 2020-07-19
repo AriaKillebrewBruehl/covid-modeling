@@ -15,6 +15,14 @@ doorInfec = (125, 70, 235)    # purple
 window = (70, 235, 125)       # mint
 
 # --------------------------------------
+
+id_counter = 0
+
+def new_id():
+    global id_counter
+    id_counter += 1
+    return id_counter
+
 def convert(filename, model):
     im = Image.open(filename) # open image file
     pixel = im.load() # load image pixel data
@@ -27,34 +35,34 @@ def convert(filename, model):
         for x in range(width): # for all columns:
             rgba = pixel[x,y]  # get the RGBA Value of the specified pixel
             if rgba == air:
-                environment = AirCell(10*y + x, model, (x, y)) # create specified BaseEnvironment cell
+                environment = AirCell(new_id(), model, (x, y)) # create specified BaseEnvironment cell
                 #environment.infect()
             elif rgba == airInfec:
-                environment = AirCell(10*y + x, model, (x, y)) # create specified BaseEnvironment cell
+                environment = AirCell(new_id(), model, (x, y)) # create specified BaseEnvironment cell
                 environment.infect()
             elif rgba == inaccess:
-                environment = UnexposedCell(10*y + x, model,(x, y))
+                environment = UnexposedCell(new_id(), model,(x, y))
             elif rgba == inaccessInfec:
-                environment = UnexposedCell(10*y + x, model,(x, y))
+                environment = UnexposedCell(new_id(), model,(x, y))
                 environment.infect()
             elif rgba == surface:
-                environment = SurfaceCell(10*y + x, model, (x, y))
+                environment = SurfaceCell(new_id(), model, (x, y))
             elif rgba == surfaceInfec:
-                environment = SurfaceCell(10*y + x, model, (x, y))
+                environment = SurfaceCell(new_id(), model, (x, y))
                 environment.infect()
             elif rgba == arrival:
-                environment = Door(10*y + x, model, (x, y))
+                environment = Door(new_id(), model, (x, y))
             elif rgba == handwash:
-                environment = SurfaceCell(10*y + x, model, (x, y))
+                environment = SurfaceCell(new_id(), model, (x, y))
             elif rgba == door:
-                environment = Door(10*y + x, model, (x, y))
+                environment = Door(new_id(), model, (x, y))
             elif rgba == doorInfec:
-                environment = Door(10*y + x, model, (x, y))
+                environment = Door(new_id(), model, (x, y))
                 environment.infect()
             elif rgba == window:
-                environment = VentilatorCell(10*y + x, model, (x, y))
+                environment = VentilatorCell(new_id(), model, (x, y))
             elif rgba == other:
-                environment = InfectableCell(10*y + x, model, (x, y))
+                environment = InfectableCell(new_id(), model, (x, y))
             else:
                 print(f"error: unregistered color found at ({x}, {y})")
             model.grid.place_agent(environment, (x, y)) # place in environment

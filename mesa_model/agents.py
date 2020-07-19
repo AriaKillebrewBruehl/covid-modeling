@@ -11,6 +11,7 @@ c_l2_mult = 0.25            # how much more likely are c_l2 people to get sick
 percent_symptomatic = 0.90  # what percent of people will show symptoms
 masked_infect_rate = 0.01   # how likey is a masked person to infect a cell 
 unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
+infection_duration = 14
 # ------------------------------
 class BaseHuman(mesa.Agent):
 	def __init__(self, unique_id, model, caution_level = 1, masked=False, immunocompromised=False, susceptibility=1, infected=False, symptomatic = False, incubation_period=0, contagion_counter=0, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]], pos=(0,0)):
@@ -23,13 +24,21 @@ class BaseHuman(mesa.Agent):
 		self.symptomatic = symptomatic 
 		self.incubation_period = incubation_period 
 		self.contagion_counter = contagion_counter
-		self.quarantined = quarantined
 		self.recovered = recovered
 		self.immune = immune
 		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.pos = pos
+		self.last_pos = None
+		if quarantined:
+			self.quarantine(initialized=False)
 
-	def infect(self, contact, neighbor): 
+	def init_infect(self):
+		self.infected = True
+		self.contagion_counter = infection_duration # todo: find a distribution
+		if random.random() < percent_symptomatic: # 90 % of people will be symptomatic todo: find more reasonable numbers
+			self.symptomatic = True
+
+	def infect(self, contact="env", neighbor=None): 
 		chance = 1.0 # default chance 
 		increase = 1.0 # default increse in contraction 
 		if self.immunocompromised:
@@ -38,32 +47,29 @@ class BaseHuman(mesa.Agent):
 			return # don't infect if we've recovered or already infected
 		if self.caution_level == 0: # chance of infection based off of how caution agent is 
 			if contact == "human": # varying chance based on how the agent came in contact with virus 
-				chance = (neighbor.contagion_counter / 14) * c_l0_mult# assumes infected people are most viral at start of infected period 
+				chance = (neighbor.contagion_counter / infection_duration) * c_l0_mult# assumes infected people are most viral at start of infected period 
 			else:
 				chance = 0.1
 		elif self.caution_level == 1:
 			if contact == "human":
-				chance = (neighbor.contagion_counter / 14) * c_l1_mult
+				chance = (neighbor.contagion_counter / infection_duration) * c_l1_mult
 			else:
 				chance = 0.01
 		elif self.caution_level == 2:
 			if contact == "human":
-				chance = (neighbor.contagion_counter / 14) * c_l2_mult
+				chance = (neighbor.contagion_counter / infection_duration) * c_l2_mult
 			else:
 				chance = 0.001
 		if random.random() < chance * increase:
-			self.infected = True
-			self.contagion_counter = 14 # todo: find a distribution
-			if random.random() < percent_symptomatic: # 90 % of people will be symptomatic todo: find more reasonable numbers
-				self.symptomatic = True
+			self.init_infect()
 		else:
 			return
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
-			chance = (self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
+			chance = (self.contagion_counter / infection_duration) * masked_infect_rate # lower chance of infecting environment if masked 
 		if not self.masked: 
-			chance = (self.contagion_counter / 14) * unmasked_infect_rate
+			chance = (self.contagion_counter / infection_duration) * unmasked_infect_rate
 		if random.random() < chance: 
 			neighbor.infect() # In the future, the initial amount may be important.
 
@@ -73,21 +79,22 @@ class BaseHuman(mesa.Agent):
 		self.recovered = True
 		self.immune = True
 
-	def quarantine(self):
-		last_pos = self.pos 
-		self.model.grid.remove_agent(self)
+	def quarantine(self, initialized=True):
+		self.last_pos = self.pos
+		if initialized == True:
+			self.model.grid.remove_agent(self)
 		self.quarantined = True
-		if self.contagion_counter <= 0: # set as recovered 
-			self.model.grid.place_agent(self, last_pos)
-			self.recover()
 
 	def update_infection(self):
 		if self.infected == False: # if not infected don't do anything 
 			return
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
-		if self.infected and self.symptomatic and self.caution_level > 0: # if cautious person and symptomatic quarantine
+		if self.infected and self.symptomatic and self.caution_level > 0 and self.quarantined == False: # if cautious person and symptomatic quarantine
 			self.quarantine() # currently called even if already quarantined, is this okay?
 		if self.contagion_counter <= 0: # set as recovered 
+			if self.quarantined == True:
+				self.model.grid.place_agent(self, self.last_pos)
+				self.quarantined = False
 			self.recover()
 
 	# agents will move randomly to a sqaure next to their current square
@@ -107,7 +114,6 @@ class BaseHuman(mesa.Agent):
 		new_position = random.randrange(self.model.width), random.randrange(self.model.height)  # get new position for agent w/in bounds of grid
 		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
 			#say get_cell_list_contents is unexposed cell but agent will move there any way
-			#print(new_position) # when converter used for environment doesn't get printed meaning get_new_pos isn't called
 			return new_position
 		else:
 			return self.get_new_pos_far()
@@ -169,7 +175,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		if self.infected < 0.1: # infected air only lasts for ~ 4 steps 
 			self.infected = False
 			pass
-		# if CovidModel.schedule.steps % 14 == 0: 
+		# if CovidModel.schedule.steps % infection_duration == 0: 
 			# self.cleanse()
 
 	def infect(self, amount = 1.0):
@@ -221,31 +227,36 @@ class AirCell(InfectableCell): # can be traveled through
 
 	def step(self):
 		pass
-	def advacne(self):
-		super().advacne()
+	def advance(self):
+		super().advance()
 		self.ventilate()
+
 	def ventilate(self):
 		possible_steps = self.model.grid.get_neighborhood(
 			self.pos,
 			moore=True, # can move diagonaly
 			include_center=False)
-		rand = False # quick hack to allow random directions
-		if self.ventilationDirection == -1:
-			rand = True
-			self.ventilationDirection = np.random.random() * np.pi * 2
-		x, y = np.round(np.cos(self.ventilationDirection)) + self.pos[0], np.round(np.sin(self.ventilationDirection)) + self.pos[1]
-		if rand == True:
-			self.ventilationDirection = -1
-		targets = [z for z in possible_steps if z == (x, y) in possible_steps]
-		if len(targets) == 0:
-			return # nothing to infect
+		targets = []
+		while len(targets) == 0:
+			rand = False # quick hack to allow random directions
+			if self.ventilationDirection == -1:
+				rand = True
+				self.ventilationDirection = np.random.random() * np.pi * 2
+			x, y = np.round(np.cos(self.ventilationDirection)) + self.pos[0], np.round(np.sin(self.ventilationDirection)) + self.pos[1]
+			if rand == True:
+				self.ventilationDirection = -1
+			targets = [z for z in possible_steps if z == (x, y) in possible_steps]
 		target = targets[0]
+
+		part_total = 0 
+		# this would make it so that amount ventilated proportional to number of agents in cell, bad idea?
 		for t in self.model.grid.get_cell_list_contents(target):
 			if isinstance(t, InfectableCell):
+				part_total += self.infected * (1 - self.ventilationDecay)
 				t.infect(self.infected * (1 - self.ventilationDecay)) # maybe make this so that the amount of particulates lost = particulate gains in other cells
 			if isinstance(t, BaseHuman):
 				t.infect()
-		self.infected *= self.ventilationDecay
+		self.infected -= part_total
 
 class Door(SurfaceCell): # upon interaction telleports agent to other side 
 	def __init__(self, unique_id, model, pos=(0,0), infected = False, transmissionLikelihood = 1, decay = 1, cleaningInterval = 1, cleaned = True):
