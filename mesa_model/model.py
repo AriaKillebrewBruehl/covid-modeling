@@ -3,7 +3,7 @@ from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation #RandomActivation
 from mesa import Model
 import numpy as numpy
-from mesa_model.converter import convert
+from mesa_model.converter import *
 from PIL import Image
 
 # CONSTANTS --------------------
@@ -62,9 +62,9 @@ class CovidModel(Model):
 			self.masked = True
 		def lev2_human(agent):
 			self.masked = True 
-		def set_up_agent(i, ag_type):
+		def set_up_agent(ag_type):
 			pos = rand_pos() # get random position on grid 
-			new_human = Student(1000 + i, pos, self) # create new Student agent 
+			new_human = Student(new_id(), pos, self) # create new Student agent 
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
 			elif ag_type == "infec":
@@ -86,11 +86,11 @@ class CovidModel(Model):
 			self.schedule.add(new_human) # add agent to schedule
 
 		for i in range(0, num_uninfec_agents):
-			set_up_agent(i, "uninfec")
+			set_up_agent("uninfec")
 		for i in range(0, num_infec_agents):
-			set_up_agent(i + num_uninfec_agents, "infec")
+			set_up_agent("infec")
 		for i in range(0, num_rec_agents):
-			set_up_agent(i + num_uninfec_agents + num_infec_agents, "rec")
+			set_up_agent("rec")
 
 		self.running = True
 		self.datacollector.collect(self)
