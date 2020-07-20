@@ -75,6 +75,14 @@ def canvas_repr(agent):
 	return port
 
 
+from os import listdir
+from os.path import isfile, join, splitext
+root = "mesa_model/maps/"
+maps = [x for x in listdir(root) if isfile(join(root, x)) and splitext(x)[1] == ".png"]
+print("=== Maps ===")
+for idx, x in enumerate(maps):
+	print(str(idx) + ". " + x)
+map_option = join(root, maps[int(input("Map: "))])
 
 chart_element = ChartModule(
 		[
@@ -88,7 +96,7 @@ model_params = {
 	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 20, description="Initial Infected"),
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
 	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered"),
-	"filename" : "mesa_model/maps/doors_simple.png"
+	"filename" : map_option
 }
 
 w, h = CovidModel.size(model_params["filename"])

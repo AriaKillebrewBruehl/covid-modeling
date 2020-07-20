@@ -101,7 +101,6 @@ class BaseHuman(mesa.Agent):
 		if not self.infected: # if not infected don't do anything 
 			return
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
-		print(self.quarantined)
 		if self.infected and self.symptomatic and self.caution_level > 0 and self.quarantined == False: # if cautious person and symptomatic quarantine
 			self.quarantine() # currently called even if already quarantined, is this okay?
 			print("quarantined") 
