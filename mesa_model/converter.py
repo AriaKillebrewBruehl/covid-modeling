@@ -36,9 +36,8 @@ def convert(filename, model):
             rgba = pixel[x,y]  # get the RGBA Value of the specified pixel
             if rgba == air:
                 environment = AirCell(new_id(), model, (x, y)) # create specified BaseEnvironment cell
-                #environment.infect()
             elif rgba == airInfec:
-                environment = AirCell(new_id(), model, (x, y)) # create specified BaseEnvironment cell
+                environment = AirCell(new_id(), model, (x, y))
                 environment.infect()
             elif rgba == inaccess:
                 environment = UnexposedCell(new_id(), model,(x, y))

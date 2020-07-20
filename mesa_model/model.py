@@ -56,13 +56,7 @@ class CovidModel(Model):
 				return pos
 			else:
 				return rand_pos()
-		def lev0_human(agent):
-			self.masked = False
-		def lev1_human(agent):
-			self.masked = True
-		def lev2_human(agent):
-			self.masked = True 
-		def set_up_agent(ag_type):
+		def setup_agent(ag_type):
 			pos = rand_pos() # get random position on grid 
 			new_human = Student(new_id(), pos, self) # create new Student agent 
 			if ag_type == "uninfec":
@@ -71,13 +65,14 @@ class CovidModel(Model):
 				new_human.init_infect() # needs deliberate setup
 			elif ag_type == "rec":
 				new_human.infected, new_human.recovered = False, True
+			# new_human.quarantined = False
 			new_human.caution_level = random.randint(0, max_caution_level) # create agents of different caution levels
 			if new_human.caution_level == 0:
-				lev0_human(new_human)
+				new_human.masked = False
 			elif new_human.caution_level == 1:
-				lev1_human(new_human)
+				new_human.masked = True
 			elif new_human.caution_level == 2:
-				lev2_human(new_human)
+				new_human.masked = True
 			if random.random() < percent_immunocompromised: # create immunocomprimised agents
 				new_human.immunocompromised = True
 			else:
@@ -85,12 +80,12 @@ class CovidModel(Model):
 			self.grid.place_agent(new_human, pos) # place agent on grid 
 			self.schedule.add(new_human) # add agent to schedule
 
-		for i in range(0, num_uninfec_agents):
-			set_up_agent("uninfec")
-		for i in range(0, num_infec_agents):
-			set_up_agent("infec")
-		for i in range(0, num_rec_agents):
-			set_up_agent("rec")
+		for i in range(num_uninfec_agents):
+			setup_agent("uninfec")
+		for i in range(num_infec_agents):
+			setup_agent("infec")
+		for i in range(num_rec_agents):
+			setup_agent("rec")
 
 		self.running = True
 		self.datacollector.collect(self)
@@ -101,8 +96,9 @@ class CovidModel(Model):
 				print(f'Loc {i} : {type(agent)} {agent.unique_id} {agent.pos}')
 		self.schedule.step()
 		self.datacollector.collect(self)
+		
 
 	def run_model(self):
 		for i in range(self.run_time):
 			self.step()
-			self.advance()
+			#self.advance()

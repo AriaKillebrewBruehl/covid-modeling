@@ -101,8 +101,9 @@ class BaseHuman(mesa.Agent):
 		if not self.infected: # if not infected don't do anything 
 			return
 		self.contagion_counter -= 1 / frames_per_day # reduce infection 
-		if self.infected and self.symptomatic and self.caution_level > 0: # if cautious person and symptomatic quarantine
-			self.quarantine() #  and not self.quarantined
+		print(self.quarantined)
+		if self.infected and self.symptomatic and self.caution_level > 0 and self.quarantined == False: # if cautious person and symptomatic quarantine
+			self.quarantine() # currently called even if already quarantined, is this okay?
 			print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			if self.quarantined == True:
@@ -181,7 +182,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.transmissionLikelihood = transmissionLikelihood
 		self.decay = decay
 
-	def decay_cell(self): # only working on infected cells in left of environment 
+	def decay_cell(self):
 		self.infected *= self.decay
 		if self.infected < 0.1: # infected air only lasts for ~ 4 steps 
 			self.infected = False
@@ -210,8 +211,6 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.decay_cell()
 		self.infect_agents()
 
-		
-
 class SurfaceCell(InfectableCell): # interactable at edges, cannot be entered 
 	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), transmissionLikelihood = 1, decay = 1, cleaningInterval = -1, cleaned = True):
 		super().__init__(unique_id, model, pos, infected, transmissionLikelihood, decay) 
@@ -236,7 +235,7 @@ class AirCell(InfectableCell): # can be traveled through
 		self.ventilationDecay = ventilationDecay
 
 	def step(self):
-		super().advance()
+		super().step()
 		self.ventilate()
 		
 

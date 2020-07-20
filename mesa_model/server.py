@@ -71,7 +71,7 @@ def canvas_repr(agent):
 		port["Color"] = color
 		if agent.infected:
 				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
-				port["text"] = str(agent.infected) if agent.infected > 0 else ""
+				port["text"] = str(agent.infected) if agent.infected > 0.001 else ""
 	return port
 
 
