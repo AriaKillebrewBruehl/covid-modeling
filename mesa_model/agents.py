@@ -14,6 +14,7 @@ unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
 infection_duration = 14      # how long are symptomatic people contagious 
 contagion_symp = 14
 contagion_asymp = 28        # how long are asymptomatic people contagious 
+
 # ------------------------------
 class BaseHuman(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]]):
@@ -51,9 +52,9 @@ class BaseHuman(mesa.Agent):
 			# self.contagion_counter = contagion_symp # todo: find a distribution
 			self.symptomatic = True
 
-	def infect(self, contact="env", neighbor=None): 
+	def infect(self, contact="env", neighbor=None, amount=1.0): 
 		chance = 1.0 # default chance 
-		increase = 1.0 # default increase in contraction 
+		increase = amount # default increase in contraction 
 		# if self.immunocompromised:
 		#	increase = immuno_increase # immunocomprimised peopel have greater chance at infection 
 		if self.immune == True or self.infected == True:
@@ -81,11 +82,11 @@ class BaseHuman(mesa.Agent):
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
-			chance = 1#(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
+			chance = 1 - self.model.mask_efficacy #(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
 		if not self.masked: 
 			chance = 1#(self.contagion_counter / 14) * unmasked_infect_rate
 		if random.random() < chance: 
-			neighbor.infect() # In the future, the initial amount may be important.
+			neighbor.infect(amount = chance) # In the future, the initial amount may be important.
 
 	def recover(self):
 		self.infected = False

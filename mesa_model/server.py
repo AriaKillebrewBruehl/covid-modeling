@@ -9,6 +9,7 @@ from mesa_model.model import CovidModel
 UNINFECTED_COLOR = "#AAAAAA"
 INFECTED_COLOR = "#FF0000"
 RECOVERED_COLOR = "#00FF00"
+QUARANTINING_COLOR = "#FFFF00"
 # ------- RGBA cell mappings -----------
 air = "#FFFFFF"          # white
 inaccessible = "#000000" # black
@@ -71,7 +72,7 @@ def canvas_repr(agent):
 		port["Color"] = color
 		if agent.infected:
 				port["Color"] = [port["Color"], "rgba" + shade + ", " + str(agent.infected / 2) +  ")"]
-				port["text"] = str(agent.infected) if agent.infected > 0.001 else ""
+				port["text"] = "{:.2f}".format(agent.infected) if agent.infected > 0.001 else ""
 	return port
 
 
@@ -89,16 +90,25 @@ chart_element = ChartModule(
 		[
 			{"Label": "Uninfected", "Color": UNINFECTED_COLOR},
 			{"Label": "Infected", "Color": INFECTED_COLOR},
-			{"Label": "Recovered", "Color": RECOVERED_COLOR}
+			{"Label": "Recovered", "Color": RECOVERED_COLOR},
+			{"Label": "Quarantined of Infected", "Color": QUARANTINING_COLOR}
 		]
 	)
 
 model_params = {
-	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 20, description="Initial Infected"),
+	"num_infec_agents" : UserSettableParameter("number", "Initial Infected", 1, description="Initial Infected"),
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
-	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 20, description="Initial Recovered"),
+	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 0, description="Initial Recovered"),
+	"mask_efficacy" : UserSettableParameter("number", "Mask Efficacy in %", 95, description="Mask effiacy in %"),
 	"filename" : map_option
 }
+
+dist_chart_element = ChartModule(
+	[
+		{"Label": "Average Distance", "Color": UNINFECTED_COLOR},
+		{"Label": "Average Nearest Distance", "Color": RECOVERED_COLOR}
+	]
+)
 
 w, h = CovidModel.size(model_params["filename"])
 
@@ -106,6 +116,6 @@ canvas_element = CanvasGrid(canvas_repr, w, h, 500, 500)
 
 ModularServer.verbose = False
 
-server = ModularServer(CovidModel, [canvas_element, chart_element], "COVID-19 Classroom Transmission Model - " + splitext(map_name)[0], model_params=model_params)
+server = ModularServer(CovidModel, [canvas_element, chart_element, dist_chart_element], "COVID-19 Classroom Transmission Model - " + splitext(map_name)[0], model_params=model_params)
 
 print(type(server.model_cls), dir(server.model_cls))
