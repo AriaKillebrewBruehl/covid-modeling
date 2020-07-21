@@ -82,7 +82,8 @@ maps = [x for x in listdir(root) if isfile(join(root, x)) and splitext(x)[1] == 
 print("=== Maps ===")
 for idx, x in enumerate(maps):
 	print(str(idx) + ". " + x)
-map_option = join(root, maps[int(input("Map: "))])
+map_name = maps[int(input("Map: "))]
+map_option = join(root, map_name)
 
 chart_element = ChartModule(
 		[
@@ -103,6 +104,8 @@ w, h = CovidModel.size(model_params["filename"])
 
 canvas_element = CanvasGrid(canvas_repr, w, h, 500, 500)
 
-server = ModularServer(CovidModel, [canvas_element, chart_element], "COVID-19 Classroom Transmission Model", model_params=model_params)
+ModularServer.verbose = False
+
+server = ModularServer(CovidModel, [canvas_element, chart_element], "COVID-19 Classroom Transmission Model - " + splitext(map_name)[0], model_params=model_params)
 
 print(type(server.model_cls), dir(server.model_cls))

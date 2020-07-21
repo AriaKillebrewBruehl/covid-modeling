@@ -58,7 +58,7 @@ class CovidModel(Model):
 				return rand_pos()
 		def setup_agent(ag_type):
 			pos = rand_pos() # get random position on grid 
-			new_human = Student(new_id(), pos, self) # create new Student agent 
+			new_human = Student(new_id(), self, pos=pos) # create new Student agent 
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
 			elif ag_type == "infec":
@@ -91,9 +91,11 @@ class CovidModel(Model):
 		self.datacollector.collect(self)
 
 	def step(self):
+		"""
 		for i, agent in enumerate(self.schedule.agents):
 			if agent.pos is None:
 				print(f'Loc {i} : {type(agent)} {agent.unique_id} {agent.pos}')
+		"""
 		self.schedule.step()
 		self.datacollector.collect(self)
 		
