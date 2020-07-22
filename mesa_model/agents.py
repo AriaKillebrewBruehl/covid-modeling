@@ -82,11 +82,14 @@ class BaseHuman(mesa.Agent):
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
-			chance = 1 - self.model.mask_efficacy #(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
+			chance = 1#(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
 		if not self.masked: 
 			chance = 1#(self.contagion_counter / 14) * unmasked_infect_rate
-		if random.random() < chance: 
-			neighbor.infect(amount = chance) # In the future, the initial amount may be important.
+		if random.random() < chance:
+			amt = 1
+			if self.masked:
+				amt *= (1 - self.model.mask_efficacy)
+			neighbor.infect(amount = amt) # In the future, the initial amount may be important.
 
 	def recover(self):
 		self.infected = False
@@ -95,7 +98,7 @@ class BaseHuman(mesa.Agent):
 		self.immune = True
 		if self.quarantined == True:
 			self.pos = self.last_pos
-			print("Placed agent", self.unique_id)
+			#print("Placed agent", self.unique_id)
 			self.model.grid.place_agent(self, self.last_pos)
 			self.quarantined = False
 
@@ -103,7 +106,7 @@ class BaseHuman(mesa.Agent):
 		self.last_pos = self.pos
 		if initialized == True:
 			self.model.grid.remove_agent(self)
-			print("Removed agent", self.unique_id)
+			#print("Removed agent", self.unique_id)
 		self.quarantined = True
 
 	def update_infection(self):
@@ -112,7 +115,7 @@ class BaseHuman(mesa.Agent):
 		self.contagion_counter -= 1 / frames_per_day # reduce infection
 		if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
 			self.quarantine() # currently called even if already quarantined, is this okay?
-			print("quarantined") 
+			#print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			self.recover()
 
@@ -123,7 +126,7 @@ class BaseHuman(mesa.Agent):
 			moore=True, # can move diagonaly
 			include_center=False)
 		new_position = self.random.choice(possible_steps)	
-		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
+		if True not in [isinstance(x, UnexposedCell) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
 			if new_position is None:
 				print("new_pos of agent" + str(self.unique_id) + " is None")
 			return new_position
@@ -133,7 +136,7 @@ class BaseHuman(mesa.Agent):
 	# agents will move randomly throughout grid
 	def get_new_pos_far(self):
 		new_position = random.randrange(self.model.width), random.randrange(self.model.height)  # get new position for agent w/in bounds of grid
-		if True not in [isinstance(x, UnexposedCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
+		if True not in [isinstance(x, UnexposedCell) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents(new_position)]: # Fixed it to work
 			#say get_cell_list_contents is unexposed cell but agent will move there any way
 			return new_position
 		else:
@@ -143,7 +146,8 @@ class BaseHuman(mesa.Agent):
 		if self.quarantined == True:
 			return
 		self.model.grid.move_agent(self, self.get_new_pos_near())
-		for neighbor in self.model.grid.get_neighbors(self.pos, True, False, 2): # second arg Moore, thrid arg include center, thrid arg radius 
+		# setting radius to 1 since it can pass through the walls
+		for neighbor in self.model.grid.get_neighbors(self.pos, True, False): # second arg Moore, thrid arg include center, thrid arg radius 
 			if not self.infected: # what will happen to uninfected agents
 				# contraction from other humans
 				if neighbor.infected and isinstance(neighbor, BaseHuman):
@@ -176,8 +180,11 @@ class BaseEnvironment(mesa.Agent):
 		pass
 
 class UnexposedCell(BaseEnvironment): # unreachable by agents 
-	def __intit__(self, unique_id, model, pos=(0,0)):
+	def __init__(self, unique_id, model, pos=(0,0)):
 		super().__init__(unique_id,model)
+		self.infected = False
+
+	def step(self):
 		self.infected = False
 
 class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces, etc
@@ -192,7 +199,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 	def decay_cell(self):
 		self.infected *= self.decay
 		if self.infected < 0.1: # infected air only lasts for ~ 4 steps 
-			self.infected = False
+			self.infected = 0
 			pass
 		# if CovidModel.schedule.steps % infection_duration == 0: 
 			# self.cleanse()
@@ -208,11 +215,10 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 	def infect_agents(self):
 		if not self.infected:
 			return 
-		else:
-			for agent in self.model.grid.get_cell_list_contents(self.pos):
-				if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
-					if random.random() < self.infected:
-						agent.infect("environment", self) # In the future, the initial amount may be important.
+		for agent in self.model.grid.get_cell_list_contents(self.pos):
+			if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
+				if random.random() < self.infected:
+					agent.infect("environment", self) # In the future, the initial amount may be important.
 
 	def step(self):
 		self.decay_cell()
@@ -252,15 +258,28 @@ class AirCell(InfectableCell): # can be traveled through
 			moore=True, # can move diagonaly
 			include_center=False)
 		targets = []
+		dx, dy = 0, 0
+		target = None
 		while len(targets) == 0:
 			rand = False # quick hack to allow random directions
 			if self.ventilationDirection == -1:
 				rand = True
 				self.ventilationDirection = np.random.random() * np.pi * 2
-			x, y = np.round(np.cos(self.ventilationDirection)) + self.pos[0], np.round(np.sin(self.ventilationDirection)) + self.pos[1]
+			dx, dy = int(np.round(np.cos(self.ventilationDirection))), int(np.round(np.sin(self.ventilationDirection)))
+			x, y = dx + self.pos[0], dy + self.pos[1]
 			if rand == True:
 				self.ventilationDirection = -1
 			targets = [z for z in possible_steps if z == (x, y) in possible_steps]
+			horiz = dx + self.pos[0], self.pos[1]
+			vert = self.pos[0], self.pos[1] + dy
+			if horiz not in possible_steps:
+				horiz = self.pos
+			if vert not in possible_steps:
+				vert = self.pos
+			if True in [isinstance(x, UnexposedCell) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents(vert)] and True in [isinstance(x, UnexposedCell) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents(horiz)]:
+				targets = []
+				continue
+				# check to see that we aren't passing a corner.
 		target = targets[0]
 
 		part_total = 0 
