@@ -141,11 +141,49 @@ class BaseHuman(mesa.Agent):
 			return new_position
 		else:
 			return self.get_new_pos_far()
+	def check_new_pos(self, X, Y):
+		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way 
+			if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((self.pos[0], Y))]:
+				new_pos = (self.pos[0] - 1, Y)
+			elif True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, self.pos[1]))]:
+				new_pos = (X, self.pos[1] + 1)
+			else:
+				choices = [(self.pos[0], self.pos[1] - 1), (self.pos[0] + 1, self.pos[1])]
+				new_pos = random.choice(choices)
+		if X < 0: # don't move off grid 
+			X += 1
+		elif X > 32:
+			X -= 1
+		if Y < 0:
+			Y += 1
+		elif Y > 32:
+			Y -= 1
+		new_pos = (X, Y)
+		return new_pos
+
+	def scheduled_move(self):
+		goalX = self.schedule[0][1]
+		goalY = self.schedule[0][2]
+		X = self.pos[0]
+		Y = self.pos[1]
+		if goalX == X and goalY == Y: # if already arrived don't move 
+			return
+		elif goalX < X:
+			X -= 1
+		elif goalX > X:
+			X += 1
+		if goalY < Y:
+			Y -= 1
+		elif goalY > Y:
+			Y += 1
+		new_pos = self.check_new_pos(X, Y)
+		self.model.grid.move_agent(self, new_pos)
 
 	def move(self):
 		if self.quarantined == True:
 			return
 		self.model.grid.move_agent(self, self.get_new_pos_near())
+		# self.scheduled_move()
 		# setting radius to 1 since it can pass through the walls
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False): # second arg Moore, thrid arg include center, thrid arg radius 
 			if not self.infected: # what will happen to uninfected agents

@@ -7,6 +7,7 @@ import numpy.linalg
 from mesa_model.converter import *
 from PIL import Image
 import itertools
+import random
 
 # CONSTANTS --------------------
 max_caution_level = 2
@@ -100,9 +101,22 @@ class CovidModel(Model):
 				return pos
 			else:
 				return rand_pos()
-		def setup_agent(ag_type):
-			pos = rand_pos() # get random position on grid 
-			new_human = Student(new_id(), self, pos=pos) # create new Student agent 
+
+		def create_pos(rows, cols): # create list of tuples of positions
+			sched_pos = []
+			base_X, base_Y = 4, 4 #(base_X, base_Y) is coordinate of upper-left most agent 
+			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
+			for i in range(rows): # for each row 
+				for j in range(cols): # for each column 
+					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
+					sched_pos.append(pos)
+			return sched_pos
+
+		def setup_agent(ag_type, pos_list):
+			pos = rand_pos() # get random starting position on grid 
+			next_pos = random.choice(pos_list) # get random goal postion for agent 
+			pos_list.remove(next_pos)
+			new_human = Student(new_id(), self, pos=pos, schedule=next_pos) # create new Student agent 
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
 			elif ag_type == "infec":
@@ -125,12 +139,13 @@ class CovidModel(Model):
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
 
-		for i in range(num_uninfec_agents):
-			setup_agent("uninfec")
-		for i in range(num_infec_agents):
-			setup_agent("infec")
-		for i in range(num_rec_agents):
-			setup_agent("rec")
+		positions = create_pos(6, 5)
+		for agents in range(num_uninfec_agents):
+			setup_agent("uninfec", positions)
+		for agents in range(num_infec_agents):
+			setup_agent("infec", positions)
+		for agents in range(num_rec_agents):
+			setup_agent("rec", positions)
 
 		self.running = True
 		self.datacollector.collect(self)
