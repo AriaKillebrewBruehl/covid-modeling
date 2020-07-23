@@ -3,7 +3,7 @@ import numpy as np
 import numpy.linalg
 import numpy.random
 import random
-frames_per_day = 2
+#frames_per_hour = 2
 # immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
 c_l0_mult = 1.0             # how much more likely are c_l0 people to get sick
 c_l1_mult = 0.5             # how much more likely are c_l1 people to get sick
@@ -14,10 +14,11 @@ unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
 infection_duration = 14      # how long are symptomatic people contagious 
 contagion_symp = 14
 contagion_asymp = 28        # how long are asymptomatic people contagious 
-
+hours = 0
+days = 0
 # ------------------------------
 class BaseHuman(mesa.Agent):
-	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]]):
+	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]], arrived = False):
 		super().__init__(unique_id, model)
 		self.caution_level = caution_level
 		self.masked = masked
@@ -35,11 +36,13 @@ class BaseHuman(mesa.Agent):
 		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.pos = pos
 		self.last_pos = None
+		self.arrived = arrived 
 		self.unique_id = unique_id
 		self.quarantined = False # LET 40-41 HANDLE QUARANTINING DO NOT CHANGE
 		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, contagion_counter, recovered, immune, schedule, pos, unique_id, quarantined)
 		if quarantined:
 			self.quarantine(initialized=False)
+		steps_per_hour = self.model.steps_per_hour
 
 	def init_infect(self):
 		self.infected = True
@@ -108,14 +111,21 @@ class BaseHuman(mesa.Agent):
 			self.model.grid.remove_agent(self)
 			#print("Removed agent", self.unique_id)
 		self.quarantined = True
-
+	'''
+	def check_self(self):
+		if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
+			self.quarantine() # currently called even if already quarantined, is this okay?
+			#print("quarantined on step" + str(self.model.schedule)) 
+	'''
 	def update_infection(self):
 		if not self.infected: # if not infected don't do anything 
 			return
-		self.contagion_counter -= 1 / frames_per_day # reduce infection
-		if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
-			self.quarantine() # currently called even if already quarantined, is this okay?
-			#print("quarantined") 
+		self.contagion_counter -= 1 / self.model.steps_per_hour # reduce infection
+		#if self.model.schedule.steps % 14 == 0:
+		#	self.check_self()
+		#if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
+		#	self.quarantine() # currently called even if already quarantined, is this okay?
+		#	#print("quarantined") 
 		if self.contagion_counter <= 0: # set as recovered 
 			self.recover()
 
@@ -141,6 +151,7 @@ class BaseHuman(mesa.Agent):
 			return new_position
 		else:
 			return self.get_new_pos_far()
+
 	def check_new_pos(self, X, Y):
 		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way 
 			if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((self.pos[0], Y))]:
@@ -177,13 +188,15 @@ class BaseHuman(mesa.Agent):
 		elif goalY > Y:
 			Y += 1
 		new_pos = self.check_new_pos(X, Y)
+		if new_pos[0] == self.schedule[0][1] and new_pos[1] == self.schedule[0][2]:
+			self.arrived = True 
 		self.model.grid.move_agent(self, new_pos)
 
 	def move(self):
 		if self.quarantined == True:
 			return
-		self.model.grid.move_agent(self, self.get_new_pos_near())
-		# self.scheduled_move()
+		# self.model.grid.move_agent(self, self.get_new_pos_near())
+		self.scheduled_move()
 		# setting radius to 1 since it can pass through the walls
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False): # second arg Moore, thrid arg include center, thrid arg radius 
 			if not self.infected: # what will happen to uninfected agents
@@ -196,17 +209,23 @@ class BaseHuman(mesa.Agent):
 			if self.infected: # what will infected agents do
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
 					self.infect_cell(neighbor)
+
+	#passing = True # class transition time, not class time (agents moving towards scheduled psotitions)
+	#if passing:
+	#	frames_per_hour = 600
+	#else:
+	#	frames_per_hour = 12
 	def step(self):
 		self.move()
 		self.update_infection()
 		
 class Student(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined, arrived = arrived)
 
 class Faculty(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined, arrived = False)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):

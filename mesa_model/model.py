@@ -67,9 +67,8 @@ class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
 
-	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95):
+	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour = 600, hours = 0, days = 0):
 		im = Image.open(filename) # open image file
-
 
 		self.humans = []
 		self.filename = filename
@@ -77,6 +76,10 @@ class CovidModel(Model):
 		self.schedule = RandomActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
 		self.grid = MultiGrid(width=self.width, height=self.height, torus=False) # last arg prevents wraparound
 		self.mask_efficacy = mask_efficacy / 100
+		self.passing = passing
+		self.steps_per_hour = steps_per_hour
+		self.hours = hours
+		self.days = days
 		self.datacollector = DataCollector(
 			model_reporters={
 				"Uninfected": get_uninfected_agents,
@@ -102,9 +105,9 @@ class CovidModel(Model):
 			else:
 				return rand_pos()
 
-		def create_pos(rows, cols): # create list of tuples of positions
+		def create_pos(rows, cols): # create list of tuples of scheduled positions
 			sched_pos = []
-			base_X, base_Y = 4, 4 #(base_X, base_Y) is coordinate of upper-left most agent 
+			base_X, base_Y = 4, 4 # (base_X, base_Y) is coordinate of upper-left most agent 
 			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
 			for i in range(rows): # for each row 
 				for j in range(cols): # for each column 
@@ -149,13 +152,38 @@ class CovidModel(Model):
 
 		self.running = True
 		self.datacollector.collect(self)
+	
+	def check_arrival(self): # check if all agents are in seats
+		for human in self.humans:
+			if not human.arrived:
+				return False
+		return True 
+	
+	def check_agents(self): # check which agents will become quarantined 
+		print("checking agents")
+		for human in self.humans:
+			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
+				human.quarantine()
+				print("quarantined on step" + str(self.schedule.steps)) 
 
 	def step(self):
-		"""
-		for i, agent in enumerate(self.schedule.agents):
-			if agent.pos is None:
-				print(f'Loc {i} : {type(agent)} {agent.unique_id} {agent.pos}')
-		"""
+		if self.check_arrival(): # if all agents have arrived class has "started"
+			self.passing = False # "passing period" ends, "class" begins 
+		if self.passing:
+			self.steps_per_hour = 600 # move every 6 sec during passing period
+		else:
+			self.steps_per_hour = 12 # move every 5 minutes during class 
+		if not self.passing:
+			self.hours += 1 / self.steps_per_hour # add time to class hours
+			if self.hours % 3 < 0.001: # after a 3 hour class 
+				self.check_agents() # agents check selves for symptoms
+				# move agents off grid 
+				# clean grid
+				# return agents to port
+				self.passing = True # passing period begins again 
+				self.hours = 0
+				self.days += 1 # number of days of class increases
+		print("arrived: " + str(self.check_arrival()) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
 		
