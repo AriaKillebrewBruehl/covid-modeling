@@ -22,15 +22,15 @@ def new_id():
     global id_counter
     id_counter += 1
     return id_counter
-
-def convert(filename, model):
+#global surface_list
+def convert(filename, model, surface_list, entrances):
     im = Image.open(filename) # open image file
     pixel = im.load() # load image pixel data
     width, height = im.size # Get the width and height of the image to iterate over
 
     # print basic image info:
     print(f"{width}x{height}: '{filename}'")
-
+    #surface_list = []
     for y in range(height): # for all rows:
         for x in range(width): # for all columns:
             rgba = pixel[x,y]  # get the RGBA Value of the specified pixel
@@ -43,21 +43,26 @@ def convert(filename, model):
                 environment = UnexposedCell(new_id(), model,(x, y))
             elif rgba == inaccessInfec:
                 environment = UnexposedCell(new_id(), model,(x, y))
-                environment.infect()
+                #environment.infect()
             elif rgba == surface:
                 environment = SurfaceCell(new_id(), model, (x, y))
+                surface_list.append((0, x, y))
             elif rgba == surfaceInfec:
                 environment = SurfaceCell(new_id(), model, (x, y))
                 environment.infect()
+                surface_list.append((0, x, y))
             elif rgba == arrival:
                 environment = Door(new_id(), model, (x, y))
+                entrances.append((x, y))
             elif rgba == handwash:
                 environment = SurfaceCell(new_id(), model, (x, y))
             elif rgba == door:
                 environment = Door(new_id(), model, (x, y))
+                entrances.append(x, y)
             elif rgba == doorInfec:
                 environment = Door(new_id(), model, (x, y))
                 environment.infect()
+                entrances.append(x, y)
             elif rgba == window:
                 environment = VentilatorCell(new_id(), model, (x, y))
             elif rgba == other:

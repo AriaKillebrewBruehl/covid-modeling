@@ -69,7 +69,8 @@ class CovidModel(Model):
 
 	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour = 600, hours = 0, days = 0):
 		im = Image.open(filename) # open image file
-
+		self.surface_list = []
+		self.entrances = []
 		self.humans = []
 		self.filename = filename
 		self.width, self.height = im.size # Get the width and height of the image to iterate over
@@ -96,7 +97,7 @@ class CovidModel(Model):
 			}
 			)
 
-		convert(filename, self) # convert environment
+		convert(filename, self, self.surface_list, self.entrances) # convert environment
 		# Initialize agents here
 		def rand_pos():
 			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
@@ -116,7 +117,7 @@ class CovidModel(Model):
 			return sched_pos
 
 		def setup_agent(ag_type, pos_list):
-			pos = rand_pos() # get random starting position on grid 
+			pos = random.choice(self.entrances) # rand_pos() # get random starting position on grid 
 			next_pos = random.choice(pos_list) # get random goal postion for agent 
 			pos_list.remove(next_pos)
 			new_human = Student(new_id(), self, pos=pos, schedule=next_pos) # create new Student agent 
@@ -142,22 +143,27 @@ class CovidModel(Model):
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
 
-		positions = create_pos(6, 5)
 		for agents in range(num_uninfec_agents):
-			setup_agent("uninfec", positions)
+			setup_agent("uninfec", self.surface_list)
 		for agents in range(num_infec_agents):
-			setup_agent("infec", positions)
+			setup_agent("infec", self.surface_list)
 		for agents in range(num_rec_agents):
-			setup_agent("rec", positions)
+			setup_agent("rec", self.surface_list)
 
 		self.running = True
 		self.datacollector.collect(self)
 	
-	def check_arrival(self): # check if all agents are in seats
+	def check_arrival(self, destination): # check if all agents are in seats
 		for human in self.humans:
 			if not human.arrived:
 				return False
-		return True 
+		if destination == "exit":
+			for human in self.humans:
+				if human.pos not in self.entrances:
+					return False
+			return True
+		elif destination == "seats":
+			return True 
 	
 	def check_agents(self): # check which agents will become quarantined 
 		print("checking agents")
@@ -165,9 +171,14 @@ class CovidModel(Model):
 			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
 				human.quarantine()
 				print("quarantined on step" + str(self.schedule.steps)) 
+	def leave(self):
+		for human in self.humans:
+			pos = random.choice(self.entrances)
+			human.schedule = [[0, pos[0], pos[1]]] # set scheduled position to port
+		self.passing = True # passing period begins again
 
 	def step(self):
-		if self.check_arrival(): # if all agents have arrived class has "started"
+		if self.check_arrival("seats"): # if all agents have arrived class has "started"
 			self.passing = False # "passing period" ends, "class" begins 
 		if self.passing:
 			self.steps_per_hour = 600 # move every 6 sec during passing period
@@ -176,14 +187,14 @@ class CovidModel(Model):
 		if not self.passing:
 			self.hours += 1 / self.steps_per_hour # add time to class hours
 			if self.hours % 3 < 0.001: # after a 3 hour class 
-				self.check_agents() # agents check selves for symptoms
-				# move agents off grid 
-				# clean grid
-				# return agents to port
-				self.passing = True # passing period begins again 
-				self.hours = 0
-				self.days += 1 # number of days of class increases
-		print("arrived: " + str(self.check_arrival()) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
+				self.leave() # move agents off grid
+		if self.check_arrival("exit"): # if all agents have left 
+			self.check_agents() # agents check selves for symptoms
+			# clean grid
+			#self.reset()# return agents to port
+			self.hours = 0
+			self.days += 1 # number of days of class increases
+		print("arrived: " + str(self.check_arrival("seats")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
 		

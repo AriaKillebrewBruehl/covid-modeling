@@ -42,7 +42,7 @@ class BaseHuman(mesa.Agent):
 		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, contagion_counter, recovered, immune, schedule, pos, unique_id, quarantined)
 		if quarantined:
 			self.quarantine(initialized=False)
-		steps_per_hour = self.model.steps_per_hour
+		self.steps_per_hour = self.model.steps_per_hour
 
 	def init_infect(self):
 		self.infected = True
@@ -120,7 +120,7 @@ class BaseHuman(mesa.Agent):
 	def update_infection(self):
 		if not self.infected: # if not infected don't do anything 
 			return
-		self.contagion_counter -= 1 / self.model.steps_per_hour # reduce infection
+		self.contagion_counter -= 1 / self.steps_per_hour # reduce infection
 		#if self.model.schedule.steps % 14 == 0:
 		#	self.check_self()
 		#if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
@@ -152,8 +152,10 @@ class BaseHuman(mesa.Agent):
 		else:
 			return self.get_new_pos_far()
 
-	def check_new_pos(self, X, Y):
-		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way 
+	def check_new_pos(self, pos):
+		X = pos[0]
+		Y = pos[1]
+		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way
 			if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((self.pos[0], Y))]:
 				new_pos = (self.pos[0] - 1, Y)
 			elif True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, self.pos[1]))]:
@@ -187,7 +189,9 @@ class BaseHuman(mesa.Agent):
 			Y -= 1
 		elif goalY > Y:
 			Y += 1
-		new_pos = self.check_new_pos(X, Y)
+		new_pos = (X, Y)
+		if new_pos[0] != goalX and new_pos[1] != goalY: # if haven't arrived check for obstacles 
+			new_pos = self.check_new_pos(new_pos)
 		if new_pos[0] == self.schedule[0][1] and new_pos[1] == self.schedule[0][2]:
 			self.arrived = True 
 		self.model.grid.move_agent(self, new_pos)
@@ -210,11 +214,6 @@ class BaseHuman(mesa.Agent):
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
 					self.infect_cell(neighbor)
 
-	#passing = True # class transition time, not class time (agents moving towards scheduled psotitions)
-	#if passing:
-	#	frames_per_hour = 600
-	#else:
-	#	frames_per_hour = 12
 	def step(self):
 		self.move()
 		self.update_infection()
