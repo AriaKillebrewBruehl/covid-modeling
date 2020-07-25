@@ -97,29 +97,13 @@ class CovidModel(Model):
 			}
 			)
 
-		convert(filename, self, self.surface_list, self.entrances) # convert environment
+		convert(filename, self, self.surface_list, self.entrances) # convert environment, create position lists
+
 		# Initialize agents here
-		def rand_pos():
-			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
-			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
-				return pos
-			else:
-				return rand_pos()
-
-		def create_pos(rows, cols): # create list of tuples of scheduled positions
-			sched_pos = []
-			base_X, base_Y = 4, 4 # (base_X, base_Y) is coordinate of upper-left most agent 
-			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
-			for i in range(rows): # for each row 
-				for j in range(cols): # for each column 
-					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
-					sched_pos.append(pos)
-			return sched_pos
-
 		def setup_agent(ag_type, pos_list):
-			pos = random.choice(self.entrances) # rand_pos() # get random starting position on grid 
+			pos = random.choice(self.entrances) # start agents at entrance
 			next_pos = random.choice(pos_list) # get random goal postion for agent 
-			pos_list.remove(next_pos)
+			pos_list.remove(next_pos) # make goal position unique 
 			new_human = Student(new_id(), self, pos=pos, schedule=next_pos) # create new Student agent 
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
@@ -171,7 +155,8 @@ class CovidModel(Model):
 			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
 				human.quarantine()
 				print("quarantined on step" + str(self.schedule.steps)) 
-	def leave(self):
+
+	def leave(self): # update agents to leave classroom
 		for human in self.humans:
 			pos = random.choice(self.entrances)
 			human.schedule = [[0, pos[0], pos[1]]] # set scheduled position to port
@@ -191,7 +176,7 @@ class CovidModel(Model):
 		if self.check_arrival("exit"): # if all agents have left 
 			self.check_agents() # agents check selves for symptoms
 			# clean grid
-			#self.reset()# return agents to port
+			#self.reset() # update scheduled position, not written yet
 			self.hours = 0
 			self.days += 1 # number of days of class increases
 		print("arrived: " + str(self.check_arrival("seats")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
@@ -203,4 +188,22 @@ class CovidModel(Model):
 		print("Rt: " + self.run_time)
 		for i in range(self.run_time):
 			self.step()
-			#self.advance()
+
+'''
+def rand_pos():
+			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
+			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
+				return pos
+			else:
+				return rand_pos()
+
+		def create_pos(rows, cols): # create list of tuples of scheduled positions
+			sched_pos = []
+			base_X, base_Y = 4, 4 # (base_X, base_Y) is coordinate of upper-left most agent 
+			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
+			for i in range(rows): # for each row 
+				for j in range(cols): # for each column 
+					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
+					sched_pos.append(pos)
+			return sched_pos
+'''
