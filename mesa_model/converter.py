@@ -63,6 +63,7 @@ def convert(filename, model):
             elif rgba == other:
                 environment = InfectableCell(new_id(), model, (x, y))
             else:
-                print(f"error: unregistered color found at ({x}, {y})")
+                pass
+                #print(f"error: unregistered color found at ({x}, {y})")
             model.grid.place_agent(environment, (x, y)) # place in environment
             model.schedule.add(environment) # add to schedule

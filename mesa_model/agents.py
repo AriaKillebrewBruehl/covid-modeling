@@ -46,7 +46,8 @@ class BaseHuman(mesa.Agent):
 
 	def init_infect(self):
 		self.infected = True
-		self.contagion_counter = infection_duration # todo: find a distribution
+		# Fix later: this won't be feasible if we're doing 600 steps per hour
+		self.contagion_counter = infection_duration  # * 24 * self.steps_per_hour # todo: find a distribution
 		self.severity = random.random() # give agent random severity 
 		if self.severity < percent_asymptomatic: # 38 % of people will be asymptomatic todo: find more reasonable numbers
 			self.contagion_counter = contagion_asymp # todo: find a distribution
@@ -138,7 +139,8 @@ class BaseHuman(mesa.Agent):
 		new_position = self.random.choice(possible_steps)	
 		if True not in [isinstance(x, UnexposedCell) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents(new_position)]:
 			if new_position is None:
-				print("new_pos of agent" + str(self.unique_id) + " is None")
+				pass
+				#print("new_pos of agent" + str(self.unique_id) + " is None")
 			return new_position
 		else:
 			return self.get_new_pos_near()

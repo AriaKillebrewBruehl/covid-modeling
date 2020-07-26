@@ -142,7 +142,7 @@ class CovidModel(Model):
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
 
-		positions = create_pos(6, 5)
+		positions = create_pos(6, max(int(numpy.ceil((num_uninfec_agents + num_infec_agents + num_rec_agents) / 6)), 5))
 		for agents in range(num_uninfec_agents):
 			setup_agent("uninfec", positions)
 		for agents in range(num_infec_agents):
@@ -151,7 +151,6 @@ class CovidModel(Model):
 			setup_agent("rec", positions)
 
 		self.running = True
-		self.datacollector.collect(self)
 	
 	def check_arrival(self): # check if all agents are in seats
 		for human in self.humans:
@@ -160,11 +159,11 @@ class CovidModel(Model):
 		return True 
 	
 	def check_agents(self): # check which agents will become quarantined 
-		print("checking agents")
+		#print("checking agents")
 		for human in self.humans:
 			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
 				human.quarantine()
-				print("quarantined on step" + str(self.schedule.steps)) 
+				#print("quarantined on step" + str(self.schedule.steps)) 
 
 	def step(self):
 		if self.check_arrival(): # if all agents have arrived class has "started"
@@ -183,13 +182,13 @@ class CovidModel(Model):
 				self.passing = True # passing period begins again 
 				self.hours = 0
 				self.days += 1 # number of days of class increases
-		print("arrived: " + str(self.check_arrival()) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
+		#print("arrived: " + str(self.check_arrival()) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
 		
 
 	def run_model(self):
-		print("Rt: " + self.run_time)
+		#print("Rt: " + self.run_time)
 		for i in range(self.run_time):
 			self.step()
 			#self.advance()
