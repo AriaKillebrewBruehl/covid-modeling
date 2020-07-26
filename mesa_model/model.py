@@ -127,6 +127,23 @@ class CovidModel(Model):
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
 
+		def rand_pos():
+			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
+			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
+				return pos
+			else:
+				return rand_pos()
+
+		def create_pos(rows, cols): # create list of tuples of scheduled positions
+			sched_pos = []
+			base_X, base_Y = 4, 4 # (base_X, base_Y) is coordinate of upper-left most agent 
+			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
+			for i in range(rows): # for each row 
+				for j in range(cols): # for each column 
+					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
+					sched_pos.append(pos)
+			return sched_pos
+
 		positions = create_pos(6, max(int(numpy.ceil((num_uninfec_agents + num_infec_agents + num_rec_agents) / 6)), 5))
 		for agents in range(num_uninfec_agents):
 			setup_agent("uninfec", self.surface_list)
@@ -189,21 +206,3 @@ class CovidModel(Model):
 		for i in range(self.run_time):
 			self.step()
 
-'''
-def rand_pos():
-			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
-			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
-				return pos
-			else:
-				return rand_pos()
-
-		def create_pos(rows, cols): # create list of tuples of scheduled positions
-			sched_pos = []
-			base_X, base_Y = 4, 4 # (base_X, base_Y) is coordinate of upper-left most agent 
-			sep = numpy.round((self.width - (2 * base_X) - cols) / (cols - 1))
-			for i in range(rows): # for each row 
-				for j in range(cols): # for each column 
-					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
-					sched_pos.append(pos)
-			return sched_pos
-'''

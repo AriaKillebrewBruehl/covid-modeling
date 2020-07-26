@@ -82,8 +82,3 @@ if __name__ == "__main__":
 		frame = frame.reset_index(drop=True)
 		frame = frame.drop(["filename"], axis=1)
 		frame.to_excel(input("Excel location: "), sheet_name=map_name)
-		while True:
-			try:
-				print(eval(input(">>> ")))
-			except Exception as e:
-				traceback.print_exc()
