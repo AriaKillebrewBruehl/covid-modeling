@@ -69,8 +69,10 @@ class CovidModel(Model):
 
 	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour = 600, hours = 0, days = 0):
 		im = Image.open(filename) # open image file
-		self.surface_list = []
+		self.surfaces = []
+		self.surface_pos = []
 		self.entrances = []
+		self.entrance_pos = []
 		self.humans = []
 		self.filename = filename
 		self.width, self.height = im.size # Get the width and height of the image to iterate over
@@ -97,14 +99,19 @@ class CovidModel(Model):
 			}
 			)
 
-		convert(filename, self, self.surface_list, self.entrances) # convert environment, create position lists
+		convert(filename, self, self.surfaces, self.entrances) # convert environment, create position lists
+		for surface in self.surfaces:
+			self.surface_pos.append(surface.pos)
+		for entrance in self.entrances:
+			self.entrance_pos.append(entrance.pos)
 
 		# Initialize agents here
-		def setup_agent(ag_type, pos_list):
-			pos = random.choice(self.entrances) # start agents at entrance
-			next_pos = random.choice(pos_list) # get random goal postion for agent 
-			pos_list.remove(next_pos) # make goal position unique 
-			new_human = Student(new_id(), self, pos=pos, schedule=next_pos) # create new Student agent 
+		def setup_agent(ag_type):
+			pos = random.choice(self.entrance_pos) # start agents at entrance
+			seat = random.choice(self.surfaces) # get random goal postion for agent 
+			self.surfaces.remove(seat) # make goal position unique
+			next_pos = seat.pos
+			new_human = Student(new_id(), self, pos=pos, next_pos = next_pos, seat = seat) # create new Student agent 
 			if ag_type == "uninfec":
 				new_human.infected, new_human.recovered = False, False # set state of agent 
 			elif ag_type == "infec":
@@ -126,7 +133,7 @@ class CovidModel(Model):
 			self.grid.place_agent(new_human, pos) # place agent on grid 
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
-
+		'''
 		def rand_pos():
 			pos = random.randrange(self.width), random.randrange(self.height)  # get new position for agent w/in bounds of grid
 			if True not in [isinstance(x, UnexposedCell) for x in self.grid.get_cell_list_contents(pos)]:
@@ -143,18 +150,49 @@ class CovidModel(Model):
 					pos = (0, base_X + j*sep, 32 - base_Y - (i*sep)) # 32 - because upper left corner is (0, 32)
 					sched_pos.append(pos)
 			return sched_pos
-
-		positions = create_pos(6, max(int(numpy.ceil((num_uninfec_agents + num_infec_agents + num_rec_agents) / 6)), 5))
+		'''
+		#positions = create_pos(6, max(int(numpy.ceil((num_uninfec_agents + num_infec_agents + num_rec_agents) / 6)), 5))
 		for agents in range(num_uninfec_agents):
-			setup_agent("uninfec", self.surface_list)
+			setup_agent("uninfec",)
 		for agents in range(num_infec_agents):
-			setup_agent("infec", self.surface_list)
+			setup_agent("infec",)
 		for agents in range(num_rec_agents):
-			setup_agent("rec", self.surface_list)
+			setup_agent("rec",)
 
 		self.running = True
 	
 	def check_arrival(self, destination): # check if all agents are in seats
+		arrived = False
+		if destination == "seats":
+			for human in self.humans:
+				if not human.arrived or not human.pos in self.surface_pos:
+					arrived = False
+					break
+				else:
+					arrived = True
+		elif destination == "exit":
+			for human in self.humans:
+				if not human.arrived or not human.pos in self.entrance_pos:
+					arrived = False
+					break
+				else:
+					arrived = True
+		return arrived
+		
+		'''
+			if destination == "exit":
+				for human in self.humans:
+					if human.pos in self.entrances_pos == False:
+						return False
+				return True
+			elif destination == "seats":
+				for human in self.humans:
+					if human.pos in self.surface_pos == False:
+						return False
+				return True
+		return True
+		'''
+		'''
 		for human in self.humans:
 			if not human.arrived:
 				return False
@@ -165,7 +203,7 @@ class CovidModel(Model):
 			return True
 		elif destination == "seats":
 			return True 
-	
+		'''
 	def check_agents(self): # check which agents will become quarantined 
 		#print("checking agents")
 		for human in self.humans:
@@ -175,9 +213,9 @@ class CovidModel(Model):
 
 	def leave(self): # update agents to leave classroom
 		for human in self.humans:
-			pos = random.choice(self.entrances)
-			human.schedule = [[0, pos[0], pos[1]]] # set scheduled position to port
-		self.passing = True # passing period begins again
+			#pos = random.choice(self.entrances)
+			human.next_pos = random.choice(self.entrance_pos) # set scheduled position to port
+		#self.passing = True # passing period begins again
 
 	def step(self):
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"
@@ -186,6 +224,7 @@ class CovidModel(Model):
 			self.steps_per_hour = 600 # move every 6 sec during passing period
 		else:
 			self.steps_per_hour = 12 # move every 5 minutes during class 
+		'''
 		if not self.passing:
 			self.hours += 1 / self.steps_per_hour # add time to class hours
 			if self.hours % 3 < 0.001: # after a 3 hour class 
@@ -196,7 +235,20 @@ class CovidModel(Model):
 				self.passing = True # passing period begins again 
 				self.hours = 0
 				self.days += 1 # number of days of class increases
-		#print("arrived: " + str(self.check_arrival()) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
+		'''
+		if not self.passing:
+			self.hours += 1 / self.steps_per_hour # add time to class hours
+			if self.hours % 3 < 0.001: # after a 3 hour class 
+				self.leave() # move agents off grid
+				self.passing = True
+				#self.clean_grid()
+		if self.check_arrival("exit"): # if all agents have left
+			self.check_agents() # agents check selves for symptoms
+			#self.clean_grid() # clean grid
+			#self.reset() # update scheduled position, not written yet
+			self.hours = 0
+			self.days += 1 # number of days of class increases
+		print("a(s): " + str(self.check_arrival("seats")) + " a(e): " + str(self.check_arrival("exit")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
 		

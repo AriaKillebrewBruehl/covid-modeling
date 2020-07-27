@@ -46,23 +46,23 @@ def convert(filename, model, surface_list, entrances):
                 #environment.infect()
             elif rgba == surface:
                 environment = SurfaceCell(new_id(), model, (x, y))
-                surface_list.append((0, x, y))
+                surface_list.append(environment)
             elif rgba == surfaceInfec:
                 environment = SurfaceCell(new_id(), model, (x, y))
                 environment.infect()
-                surface_list.append((0, x, y))
+                surface_list.append(environment)
             elif rgba == arrival:
                 environment = Door(new_id(), model, (x, y))
-                entrances.append((x, y))
+                entrances.append(environment)
             elif rgba == handwash:
                 environment = SurfaceCell(new_id(), model, (x, y))
             elif rgba == door:
                 environment = Door(new_id(), model, (x, y))
-                entrances.append(x, y)
+                entrances.append(environment)
             elif rgba == doorInfec:
                 environment = Door(new_id(), model, (x, y))
                 environment.infect()
-                entrances.append(x, y)
+                entrances.append(environment)
             elif rgba == window:
                 environment = VentilatorCell(new_id(), model, (x, y))
             elif rgba == other:

@@ -18,7 +18,7 @@ hours = 0
 days = 0
 # ------------------------------
 class BaseHuman(mesa.Agent):
-	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, schedule=[[0, 0, 0]], arrived = False):
+	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, next_pos=(0, 0), seat = (0, 0), arrived = False):
 		super().__init__(unique_id, model)
 		self.caution_level = caution_level
 		self.masked = masked
@@ -33,7 +33,9 @@ class BaseHuman(mesa.Agent):
 		self.contagion_counter = contagion_counter
 		self.recovered = recovered
 		self.immune = immune
-		self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
+		#self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
+		self.next_pos = next_pos
+		self.seat = seat
 		self.pos = pos
 		self.last_pos = None
 		self.arrived = arrived 
@@ -177,8 +179,8 @@ class BaseHuman(mesa.Agent):
 		return new_pos
 
 	def scheduled_move(self):
-		goalX = self.schedule[0][1]
-		goalY = self.schedule[0][2]
+		goalX = self.next_pos[0]
+		goalY = self.next_pos[1]
 		X = self.pos[0]
 		Y = self.pos[1]
 		if goalX == X and goalY == Y: # if already arrived don't move 
@@ -194,9 +196,10 @@ class BaseHuman(mesa.Agent):
 		new_pos = (X, Y)
 		if new_pos[0] != goalX and new_pos[1] != goalY: # if haven't arrived check for obstacles 
 			new_pos = self.check_new_pos(new_pos)
-		if new_pos[0] == self.schedule[0][1] and new_pos[1] == self.schedule[0][2]:
+		if new_pos[0] == self.next_pos[0] and new_pos[1] == self.next_pos[1]:
 			self.arrived = True 
 		self.model.grid.move_agent(self, new_pos)
+
 
 	def move(self):
 		if self.quarantined == True:
@@ -221,12 +224,12 @@ class BaseHuman(mesa.Agent):
 		self.update_infection()
 		
 class Student(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False, arrived = False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined, arrived = arrived)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
 
 class Faculty(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, schedule=[[0, 0, 0]], recovered=False, arrived = False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, schedule=schedule, quarantined=quarantined, arrived = False)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = False)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):
