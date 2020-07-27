@@ -6,12 +6,10 @@ import collections.abc
 import traceback
 import copy
 import pandas as pd
+import pickle
 
 model_reporters = {
-	"Uninfected": mesa_model.model.get_infected_agents,
-	"Recovered": mesa_model.model.get_recovered_agents,
-	"Infected": mesa_model.model.get_uninfected_agents,
-	"Quarantined of Infected": mesa_model.model.get_quarantined_agents
+	"dataframe": mesa_model.model.get_dataframe
 }
 
 
@@ -75,10 +73,35 @@ if __name__ == "__main__":
 	#
 
 	print("Total: " + str(len(fixed_params_q)))
+	out = None
 	with mp.Pool(processes=threads) as pool:
 		res = pool.map_async(run, fixed_params_q)
-		res.wait()
-		frame = pd.concat(res.get())
-		frame = frame.reset_index(drop=True)
-		frame = frame.drop(["filename"], axis=1)
-		frame.to_excel(input("Excel location: "), sheet_name=map_name)
+		pool.close()
+		pool.join()
+
+	out = res.get()
+	avg_frames = []
+	for run_frame in out:
+		# Each entry is a single frame with all results of BatchRunner with last column being frames of individual runs.
+		avg_frame = pickle.loads(run_frame["dataframe"][0])
+		avg_frame[:] = 0
+		# Average of all datacollector frames
+		params = list(run_frame.iloc[0][0:len(var_params)])
+		for i in range(len(run_frame["dataframe"])):
+			dc_frame = pickle.loads(run_frame["dataframe"][i])
+			avg_frame += dc_frame / len(run_frame)
+		avg_frames.append((params, avg_frame))
+
+	frame = pd.concat(res.get())
+	frame = frame.reset_index(drop=True)
+	frame = frame.drop(["filename", "dataframe"], axis=1)
+	res = False
+	while res = False:
+		try:
+			with pd.ExcelWriter(input("Excel location: ")) as excel:
+				frame.to_excel(excel, sheet_name=map_name)
+				for x in avg_frames:
+					x[1].to_excel(excel, sheet_name="-".join([str(y).replace("/", "_") for y in x[0][:-1]]))
+			res = True
+		except Exception as e:
+			print(e)

@@ -17,6 +17,9 @@ contagion_asymp = 28        # how long are asymptomatic people contagious
 hours = 0
 days = 0
 # ------------------------------
+
+
+
 class BaseHuman(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, next_pos=(0, 0), seat = (0, 0), arrived = False):
 		super().__init__(unique_id, model)
@@ -44,7 +47,7 @@ class BaseHuman(mesa.Agent):
 		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, contagion_counter, recovered, immune, schedule, pos, unique_id, quarantined)
 		if quarantined:
 			self.quarantine(initialized=False)
-		self.steps_per_hour = self.model.steps_per_hour
+		# since this changes, this shouldn't be here, use latter half instead self.steps_per_hour = self.model.steps_per_hour 
 
 	def init_infect(self):
 		self.infected = True
@@ -118,7 +121,7 @@ class BaseHuman(mesa.Agent):
 	def update_infection(self):
 		if not self.infected: # if not infected don't do anything 
 			return
-		self.contagion_counter -= 1 / self.steps_per_hour # reduce infection
+		self.contagion_counter -= 1 / self.model.steps_per_hour # reduce infection
 		#if self.model.schedule.steps % 14 == 0:
 		#	self.check_self()
 		#if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine

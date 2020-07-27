@@ -8,6 +8,7 @@ from mesa_model.converter import *
 from PIL import Image
 import itertools
 import random
+import pickle
 
 # CONSTANTS --------------------
 max_caution_level = 2
@@ -63,11 +64,20 @@ def get_avg_min_distance(model):
 	vs = mins.values()
 	return sum(x for x in vs) / len(vs)
 
+def get_days(model):
+	return model.days
+
+def get_hours(model):
+	return model.hours
+
+def get_dataframe(model):
+	return pickle.dumps(model.datacollector.get_model_vars_dataframe().copy())
+
 class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
 
-	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour = 600, hours = 0, days = 1):
+	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 600, steps_per_hour_fast = 12, hours = 0, days = 1):
 		im = Image.open(filename) # open image file
 		self.surfaces = []
 		self.surface_pos = []
@@ -80,7 +90,9 @@ class CovidModel(Model):
 		self.grid = MultiGrid(width=self.width, height=self.height, torus=False) # last arg prevents wraparound
 		self.mask_efficacy = mask_efficacy / 100
 		self.passing = passing
-		self.steps_per_hour = steps_per_hour
+		self.steps_per_hour_slow = steps_per_hour_slow
+		self.steps_per_hour_fast = steps_per_hour_fast
+		self.steps_per_hour = self.steps_per_hour_fast
 		self.hours = hours
 		self.days = days
 		self.datacollector = DataCollector(
@@ -90,7 +102,9 @@ class CovidModel(Model):
 				"Infected": get_infected_agents,
 				"Quarantined of Infected": get_quarantined_agents,
 				"Average Distance": get_average_distance,
-				"Average Nearest Distance": get_avg_min_distance
+				"Average Nearest Distance": get_avg_min_distance,
+				"Days": get_days,
+				"Hours": get_hours
 			},
 			agent_reporters={
 			#	"Uninfected": lambda x: x.infected == False and x.recovered == False,
@@ -144,22 +158,16 @@ class CovidModel(Model):
 		self.running = True
 	
 	def check_arrival(self, destination): # check if all agents are in seats
-		arrived = False
+		# removed arrived to make it more idiomatic
 		for human in self.humans:
 			if not human.quarantined: # only check agents at class
 					if destination == "seats":
 						if not human.arrived or not human.pos in self.surface_pos:
-							arrived = False
-							break
-						else:
-							arrived = True
+							return False
 					elif destination == "exit":
 						if not human.arrived or not human.pos in self.entrance_pos:
-							arrived = False
-							break
-						else:
-							arrived = True
-		return arrived
+							return False
+		return True
 
 	def check_agents(self): # check which agents will become quarantined 
 		for human in self.humans:
@@ -189,9 +197,9 @@ class CovidModel(Model):
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"
 			self.passing = False # "passing period" ends, "class" begins 
 		if self.passing:
-			self.steps_per_hour = 600 # move every 6 sec during passing period
+			self.steps_per_hour = self.steps_per_hour_slow # move every 6 sec during passing period
 		else:
-			self.steps_per_hour = 12 # move every 5 minutes during class 
+			self.steps_per_hour = self.steps_per_hour_fast # move every 5 minutes during class 
 		if not self.passing:
 			self.hours += 1 / self.steps_per_hour # add time to class hours
 			if self.hours % 3 < 0.001: # after a 3 hour class 
