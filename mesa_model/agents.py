@@ -114,12 +114,7 @@ class BaseHuman(mesa.Agent):
 			self.model.grid.remove_agent(self)
 			#print("Removed agent", self.unique_id)
 		self.quarantined = True
-	'''
-	def check_self(self):
-		if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
-			self.quarantine() # currently called even if already quarantined, is this okay?
-			#print("quarantined on step" + str(self.model.schedule)) 
-	'''
+		
 	def update_infection(self):
 		if not self.infected: # if not infected don't do anything 
 			return
