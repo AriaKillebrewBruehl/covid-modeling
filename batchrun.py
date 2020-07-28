@@ -17,7 +17,7 @@ def run(fixed_params):
 	global model_reporters
 	print("Job: " + str(fixed_params.pop("job")))
 	try:
-		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=1, max_steps=150, model_reporters=model_reporters)
+		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=5, max_steps=5000, model_reporters=model_reporters)
 		runner.run_all()
 		# Note: Will return in correct order, first keys up to 'Run' will not be in correct order
 		frame = runner.get_model_vars_dataframe()
@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
 
 	var_params = {
-		"num_infec_agents": range(1, 5),
-		"num_uninfec_agents": range(10, 100, 10),
+		"num_infec_agents": 1, #range(1, 5),
+		"num_uninfec_agents": 20, #range(10, 100, 10),
 		"num_rec_agents": 0,
 		"mask_efficacy": 95,
 		"filename": map_option
@@ -87,16 +87,23 @@ if __name__ == "__main__":
 		avg_frame[:] = 0
 		# Average of all datacollector frames
 		params = list(run_frame.iloc[0][0:len(var_params)])
-		for i in range(len(run_frame["dataframe"])):
-			dc_frame = pickle.loads(run_frame["dataframe"][i])
-			avg_frame += dc_frame / len(run_frame)
+		dc_frames = [pickle.loads(run_frame["dataframe"][i]) for i in range(len(run_frame["dataframe"]))]
+		max_len = max([x.shape[0] for x in dc_frames])
+		avg_frame = avg_frame.append(avg_frame.iloc[[-1] * (max_len - avg_frame.shape[0])]).reset_index(drop=True)
+
+		for dc_frame in dc_frames:
+			# Question: what do we do with dataframes that have varying sizes?
+			print(dc_frame.shape)
+			dc_frame = dc_frame.append(dc_frame.iloc[[-1] * (max_len - dc_frame.shape[0])]).reset_index(drop=True)
+			print(dc_frame.shape)
+			avg_frame += dc_frame / len(dc_frames)
 		avg_frames.append((params, avg_frame))
 
 	frame = pd.concat(res.get())
 	frame = frame.reset_index(drop=True)
 	frame = frame.drop(["filename", "dataframe"], axis=1)
 	res = False
-	while res = False:
+	while res == False:
 		try:
 			with pd.ExcelWriter(input("Excel location: ")) as excel:
 				frame.to_excel(excel, sheet_name=map_name)

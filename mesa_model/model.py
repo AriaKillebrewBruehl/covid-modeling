@@ -93,6 +93,7 @@ class CovidModel(Model):
 		self.steps_per_hour_slow = steps_per_hour_slow
 		self.steps_per_hour_fast = steps_per_hour_fast
 		self.steps_per_hour = self.steps_per_hour_fast
+		self.hours_per_day = 3
 		self.hours = hours
 		self.days = days
 		self.datacollector = DataCollector(
@@ -194,6 +195,10 @@ class CovidModel(Model):
 			human.next_pos = human.seat.pos
 
 	def step(self):
+		# can we stop?
+		if get_recovered_agents(self) == len(self.humans):
+			self.running = False
+
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"
 			self.passing = False # "passing period" ends, "class" begins 
 		if self.passing:
@@ -202,7 +207,7 @@ class CovidModel(Model):
 			self.steps_per_hour = self.steps_per_hour_fast # move every 5 minutes during class 
 		if not self.passing:
 			self.hours += 1 / self.steps_per_hour # add time to class hours
-			if self.hours % 3 < 0.001: # after a 3 hour class 
+			if self.hours % self.hours_per_day < 0.001: # after a 3 hour class 
 				self.leave() # move agents off grid
 				self.passing = True # passing period begins again
 		if self.check_arrival("exit"): # if all agents have left
