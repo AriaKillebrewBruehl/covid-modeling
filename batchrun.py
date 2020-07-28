@@ -9,6 +9,7 @@ import pandas as pd
 import pickle
 
 model_reporters = {
+	"length": lambda x: x.schedule.steps
 	"dataframe": mesa_model.model.get_dataframe
 }
 

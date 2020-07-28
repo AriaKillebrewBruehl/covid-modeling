@@ -83,7 +83,8 @@ class BaseHuman(mesa.Agent):
 				chance = (neighbor.contagion_counter / infection_duration) * c_l2_mult
 			else:
 				chance = 0.001
-		if random.random() < chance * increase:
+		r, c = random.random(), chance * increase / self.model.steps_per_hour # need to figure out a balance between speed and feasibility in running
+		if r < c:
 			self.init_infect()
 		else:
 			return
@@ -98,7 +99,7 @@ class BaseHuman(mesa.Agent):
 			amt = 1
 			if self.masked:
 				amt *= (1 - self.model.mask_efficacy)
-			neighbor.infect(amount = amt) # In the future, the initial amount may be important.
+			neighbor.infect(amount = amt / self.model.steps_per_hour) # In the future, the initial amount may be important.
 
 	def recover(self):
 		self.infected = False
@@ -277,7 +278,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		for agent in self.model.grid.get_cell_list_contents(self.pos):
 			if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
 				if random.random() < self.infected:
-					agent.infect("environment", self) # In the future, the initial amount may be important.
+					agent.infect("env", self, amount=self.infected) # In the future, the initial amount may be important.
 
 	def step(self):
 		self.decay_cell()
