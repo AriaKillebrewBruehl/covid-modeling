@@ -124,6 +124,13 @@ class CovidModel(Model):
 		for entrance in self.entrances:
 			self.entrance_pos.append(entrance.pos)
 
+		prof_seat = self.surfaces[0]
+		pos = prof_seat.pos
+		self.surfaces.remove(prof_seat)
+		prof = Faculty(new_id(), self, pos = pos, next_pos = pos, seat = prof_seat, infected = False, recovered = False, masked = True, arrived = True)
+		self.grid.place_agent(prof, pos)
+		self.schedule.add(prof)
+		self.humans.append(prof)
 		# Initialize agents here
 		def setup_agent(ag_type):
 			pos = random.choice(self.entrance_pos) # start agents at entrance
@@ -151,13 +158,7 @@ class CovidModel(Model):
 			self.grid.place_agent(new_human, pos) # place agent on grid 
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
-		prof_seat = self.surfaces[0]
-		pos = prof_seat.pos
-		self.surfaces.remove(prof_seat)
-		prof = Faculty(new_id(), self, pos = pos, next_pos = pos, seat = prof_seat, infected = False, recovered = False, masked = True)
-		self.grid.place_agent(prof, pos)
-		self.schedule.add(prof)
-		self.humans.append(prof)
+		
 		for agents in range(num_uninfec_agents):
 			setup_agent("uninfec",)
 		for agents in range(num_infec_agents):
@@ -225,6 +226,7 @@ class CovidModel(Model):
 			self.hours = 0 # reset class hours
 			self.days += 1 # number of days of class increases
 			self.reset() # update scheduled position
+		#print(get_average_r0(self))
 		print("a(s): " + str(self.check_arrival("seats")) + " a(e): " + str(self.check_arrival("exit")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
