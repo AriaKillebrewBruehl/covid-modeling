@@ -31,6 +31,9 @@ def get_uninfected_agents(model):
 def get_quarantined_agents(model):
 	return len([x for x in model.humans if x.quarantined == True])
 
+def get_average_r0(model):
+	rs = [x.r0 for x in model.humans if x.r0 != 0]
+	return numpy.average(rs) if len(rs) != 0 else 0	
 
 # WARNING: VERY EXPENSIVE
 def get_average_distance(model):
@@ -105,7 +108,8 @@ class CovidModel(Model):
 				"Average Distance": get_average_distance,
 				"Average Nearest Distance": get_avg_min_distance,
 				"Days": get_days,
-				"Hours": get_hours
+				"Hours": get_hours,
+				"Average R_0": get_average_r0
 			},
 			agent_reporters={
 			#	"Uninfected": lambda x: x.infected == False and x.recovered == False,
@@ -196,7 +200,7 @@ class CovidModel(Model):
 
 	def step(self):
 		# can we stop?
-		if get_recovered_agents(self) == len(self.humans):
+		if get_infected_agents(self) == 0 and self.steps > self.steps_per_hour_slow * 2:
 			self.running = False
 
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"

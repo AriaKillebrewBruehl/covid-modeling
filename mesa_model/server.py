@@ -10,6 +10,7 @@ UNINFECTED_COLOR = "#AAAAAA"
 INFECTED_COLOR = "#FF0000"
 RECOVERED_COLOR = "#00FF00"
 QUARANTINING_COLOR = "#FFFF00"
+R0_COLOR = "#0000FF"
 # ------- RGBA cell mappings -----------
 air = "#FFFFFF"          # white
 inaccessible = "#000000" # black
@@ -91,7 +92,8 @@ chart_element = ChartModule(
 			{"Label": "Uninfected", "Color": UNINFECTED_COLOR},
 			{"Label": "Infected", "Color": INFECTED_COLOR},
 			{"Label": "Recovered", "Color": RECOVERED_COLOR},
-			{"Label": "Quarantined of Infected", "Color": QUARANTINING_COLOR}
+			{"Label": "Quarantined of Infected", "Color": QUARANTINING_COLOR},
+			{"Label": "Average R_0", "Color": R0_COLOR}
 		]
 	)
 

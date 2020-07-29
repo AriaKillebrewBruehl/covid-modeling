@@ -43,11 +43,15 @@ class BaseHuman(mesa.Agent):
 		self.last_pos = None
 		self.arrived = arrived 
 		self.unique_id = unique_id
+		self.r0 = 0
 		self.quarantined = False # LET 40-41 HANDLE QUARANTINING DO NOT CHANGE
 		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, contagion_counter, recovered, immune, schedule, pos, unique_id, quarantined)
 		if quarantined:
 			self.quarantine(initialized=False)
 		# since this changes, this shouldn't be here, use latter half instead self.steps_per_hour = self.model.steps_per_hour 
+
+	def update_r0(self):
+		self.r0 += 1
 
 	def init_infect(self):
 		self.infected = True
@@ -61,7 +65,7 @@ class BaseHuman(mesa.Agent):
 			# self.contagion_counter = contagion_symp # todo: find a distribution
 			self.symptomatic = True
 
-	def infect(self, contact="env", neighbor=None, amount=1.0): 
+	def infect(self, contact=None, neighbor=None, amount=1.0): 
 		chance = 1.0 # default chance 
 		increase = amount # default increase in contraction 
 		# if self.immunocompromised:
@@ -69,23 +73,25 @@ class BaseHuman(mesa.Agent):
 		if self.immune == True or self.infected == True:
 			return # don't infect if we've recovered or already infected
 		if self.caution_level == 0: # chance of infection based off of how caution agent is 
-			if contact == "human": # varying chance based on how the agent came in contact with virus 
+			if isinstance(contact, BaseHuman): # varying chance based on how the agent came in contact with virus 
 				chance = (neighbor.contagion_counter / infection_duration) * c_l0_mult# assumes infected people are most viral at start of infected period 
 			else:
 				chance = 0.1
 		elif self.caution_level == 1:
-			if contact == "human":
+			if isinstance(contact, BaseHuman):
 				chance = (neighbor.contagion_counter / infection_duration) * c_l1_mult
 			else:
 				chance = 0.01
 		elif self.caution_level == 2:
-			if contact == "human":
+			if isinstance(contact, BaseHuman):
 				chance = (neighbor.contagion_counter / infection_duration) * c_l2_mult
 			else:
 				chance = 0.001
 		r, c = random.random(), chance * increase / self.model.steps_per_hour # need to figure out a balance between speed and feasibility in running
 		if r < c:
 			self.init_infect()
+			if contact:
+				contact.update_r0()
 		else:
 			return
 
@@ -99,7 +105,7 @@ class BaseHuman(mesa.Agent):
 			amt = 1
 			if self.masked:
 				amt *= (1 - self.model.mask_efficacy)
-			neighbor.infect(amount = amt / self.model.steps_per_hour) # In the future, the initial amount may be important.
+			neighbor.infect(amount = amt / self.model.steps_per_hour, contact=self) # In the future, the initial amount may be important.
 
 	def recover(self):
 		self.infected = False
@@ -210,10 +216,10 @@ class BaseHuman(mesa.Agent):
 			if not self.infected: # what will happen to uninfected agents
 				# contraction from other humans
 				if neighbor.infected and isinstance(neighbor, BaseHuman):
-					self.infect("human", neighbor) # let infect() determmine if they should move from recovered to another category
+					self.infect(contact=neighbor, neighbor=neighbor) # let infect() determmine if they should move from recovered to another category
 				# contraction from environment 
 				elif neighbor.infected and isinstance(neighbor, InfectableCell):
-					self.infect("environment", neighbor)
+					self.infect(contact=neighbor.contact, neighbor=neighbor)
 			if self.infected: # what will infected agents do
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
 					self.infect_cell(neighbor)
@@ -255,6 +261,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		self.contagion_counter = contagion_counter
 		self.transmissionLikelihood = transmissionLikelihood
 		self.decay = decay
+		self.contact = None
 
 	def decay_cell(self):
 		self.infected *= self.decay
@@ -264,7 +271,9 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		# if CovidModel.schedule.steps % infection_duration == 0: 
 			# self.cleanse()
 
-	def infect(self, amount = 1.0):
+	def infect(self, amount = 1.0, contact=None):
+		if contact is not None:
+			self.contact = contact
 		self.infected = min(self.infected + amount, 1.0) # Make sure we don't go past maximum capacity.
 
 	def cleanse(self, percent = 1.0):
@@ -278,7 +287,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		for agent in self.model.grid.get_cell_list_contents(self.pos):
 			if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
 				if random.random() < self.infected:
-					agent.infect("env", self, amount=self.infected) # In the future, the initial amount may be important.
+					agent.infect(contact=self.contact, neighbor=self, amount=self.infected) # In the future, the initial amount may be important.
 
 	def step(self):
 		self.decay_cell()
@@ -347,9 +356,9 @@ class AirCell(InfectableCell): # can be traveled through
 		for t in self.model.grid.get_cell_list_contents(target):
 			if isinstance(t, InfectableCell):
 				part_total += self.infected * (1 - self.ventilationDecay)
-				t.infect(self.infected * (1 - self.ventilationDecay)) # maybe make this so that the amount of particulates lost = particulate gains in other cells
+				t.infect(self.infected * (1 - self.ventilationDecay), contact=self.contact) # maybe make this so that the amount of particulates lost = particulate gains in other cells
 			if isinstance(t, BaseHuman):
-				t.infect("environment", self)
+				t.infect(contact=self.contact, neighbor=self)
 		self.infected -= part_total
 
 class Door(SurfaceCell): # upon interaction telleports agent to other side 
