@@ -234,7 +234,7 @@ class Student(BaseHuman):
 
 class Faculty(BaseHuman):
 	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = False)
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):
