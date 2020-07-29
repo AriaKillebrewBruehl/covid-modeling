@@ -77,7 +77,7 @@ class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
 
-	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 600, steps_per_hour_fast = 12, hours = 0, days = 1):
+	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 600, steps_per_hour_fast = 12, hours_per_day = 3, days = 1):
 		im = Image.open(filename) # open image file
 		self.surfaces = []
 		self.surface_pos = []
@@ -93,8 +93,8 @@ class CovidModel(Model):
 		self.steps_per_hour_slow = steps_per_hour_slow
 		self.steps_per_hour_fast = steps_per_hour_fast
 		self.steps_per_hour = self.steps_per_hour_fast
-		self.hours_per_day = 3
-		self.hours = hours
+		self.hours_per_day = hours_per_day
+		self.hours = 0
 		self.days = days
 		self.datacollector = DataCollector(
 			model_reporters={
@@ -133,7 +133,6 @@ class CovidModel(Model):
 				new_human.init_infect() # needs deliberate setup
 			elif ag_type == "rec":
 				new_human.infected, new_human.recovered = False, True
-			# new_human.quarantined = False
 			new_human.caution_level = random.randint(0, max_caution_level) # create agents of different caution levels
 			if new_human.caution_level == 0:
 				new_human.masked = False
@@ -148,7 +147,13 @@ class CovidModel(Model):
 			self.grid.place_agent(new_human, pos) # place agent on grid 
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
-
+		prof_seat = self.surfaces[0]
+		pos = prof_seat.pos
+		self.surfaces.remove(prof_seat)
+		prof = Faculty(new_id(), self, pos = pos, next_pos = pos, seat = prof_seat, infected = False, recovered = False, masked = True)
+		self.grid.place_agent(prof, pos)
+		self.schedule.add(prof)
+		self.humans.append(prof)
 		for agents in range(num_uninfec_agents):
 			setup_agent("uninfec",)
 		for agents in range(num_infec_agents):
@@ -196,7 +201,7 @@ class CovidModel(Model):
 
 	def step(self):
 		# can we stop?
-		if get_recovered_agents(self) == len(self.humans):
+		if get_recovered_agents(self) + get_uninfected_agents(self) == len(self.humans):
 			self.running = False
 
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"

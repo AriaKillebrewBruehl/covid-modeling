@@ -100,6 +100,7 @@ model_params = {
 	"num_uninfec_agents" : UserSettableParameter("number", "Initial Uninfected", 20, description="Initial Uninfected"),
 	"num_rec_agents" : UserSettableParameter("number", "Initial Recovered", 0, description="Initial Recovered"),
 	"mask_efficacy" : UserSettableParameter("number", "Mask Efficacy in %", 95, description="Mask effiacy in %"),
+	"hours_per_day" : UserSettableParameter("number", "Hours/Day", 3, description="Hours/Day"),
 	"steps_per_hour_slow" : UserSettableParameter("number", "Steps/Hour (Slow)", 600, description="Steps/Hour (Slow)"),
 	"steps_per_hour_fast" : UserSettableParameter("number", "Steps/Hour (Fast)", 12, description="Steps/Hour (Fast)"),
 	"filename" : map_option

@@ -3,7 +3,8 @@ import numpy as np
 import numpy.linalg
 import numpy.random
 import random
-#frames_per_hour = 2
+
+# CONSTANTS -------------------
 # immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
 c_l0_mult = 1.0             # how much more likely are c_l0 people to get sick
 c_l1_mult = 0.5             # how much more likely are c_l1 people to get sick
@@ -14,8 +15,8 @@ unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
 infection_duration = 14      # how long are symptomatic people contagious 
 contagion_symp = 14
 contagion_asymp = 28        # how long are asymptomatic people contagious 
-hours = 0
-days = 0
+#hours = model.hours
+#days = model.days
 # ------------------------------
 
 
@@ -25,10 +26,6 @@ class BaseHuman(mesa.Agent):
 		super().__init__(unique_id, model)
 		self.caution_level = caution_level
 		self.masked = masked
-		'''
-		self.immunocompromised = immunocompromised
-		self.susceptibility = np.double(susceptibility)
-		'''
 		self.severity = np.double(severity)
 		self.infected = infected
 		self.symptomatic = symptomatic 
@@ -36,7 +33,6 @@ class BaseHuman(mesa.Agent):
 		self.contagion_counter = contagion_counter
 		self.recovered = recovered
 		self.immune = immune
-		#self.schedule = np.reshape(schedule, (-1, 3)) # Effectively a list of tuples representing (t, x, y)
 		self.next_pos = next_pos
 		self.seat = seat
 		self.pos = pos
@@ -53,11 +49,19 @@ class BaseHuman(mesa.Agent):
 		self.infected = True
 		# Fix later: this won't be feasible if we're doing 600 steps per hour
 		self.contagion_counter = infection_duration  # * 24 * self.steps_per_hour # todo: find a distribution
-		self.severity = random.random() # give agent random severity 
+		self.severity = random.random() # give agent random severity
 		if self.severity < percent_asymptomatic: # 38 % of people will be asymptomatic todo: find more reasonable numbers
 			self.contagion_counter = contagion_asymp # todo: find a distribution
-			self.symptomatic = False
-		else: 
+			self.incubation_period = contagion_asymp # aysmptomatic people will never develop symptoms
+			#self.symptomatic = False
+		else:
+			r = random.random()
+			if r <= 0.50:
+				self.incubation_period = random.randint(3, 5) # 50% of people have incubation period of 3 - 5 days
+			elif 0.50 < r <= 0.75:
+				self.incubation_period = random.randint(0, 2) # 25% of people have incubation period of 0 - 2 days
+			elif 0.75 < r:
+				self.incubation_period = 6 # 25% of people have incubation period of 6 days 
 			# self.contagion_counter = contagion_symp # todo: find a distribution
 			self.symptomatic = True
 
@@ -93,8 +97,6 @@ class BaseHuman(mesa.Agent):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
 			chance = 1#(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
-		if not self.masked: 
-			chance = 1#(self.contagion_counter / 14) * unmasked_infect_rate
 		if random.random() < chance:
 			amt = 1
 			if self.masked:
@@ -123,11 +125,8 @@ class BaseHuman(mesa.Agent):
 		if not self.infected: # if not infected don't do anything 
 			return
 		self.contagion_counter -= 1 / self.model.steps_per_hour # reduce infection
-		#if self.model.schedule.steps % 14 == 0:
-		#	self.check_self()
-		#if self.infected and self.symptomatic and self.caution_level > 0 and not self.quarantined: # if cautious person and symptomatic quarantine
-		#	self.quarantine() # currently called even if already quarantined, is this okay?
-		#	#print("quarantined") 
+		if infection_duration - self.incubation_period <= self.contagion_counter: # develop symptoms after incubation period of virus
+			self.symptomatic == True
 		if self.contagion_counter <= 0: # set as recovered 
 			self.recover()
 
@@ -171,7 +170,7 @@ class BaseHuman(mesa.Agent):
 		elif X > 32:
 			X -= 1
 		if Y < 0:
-			Y += 1
+			Y += 1	
 		elif Y > 32:
 			Y -= 1
 		new_pos = (X, Y)
@@ -198,7 +197,6 @@ class BaseHuman(mesa.Agent):
 		if new_pos[0] == self.next_pos[0] and new_pos[1] == self.next_pos[1]:
 			self.arrived = True 
 		self.model.grid.move_agent(self, new_pos)
-
 
 	def move(self):
 		if self.quarantined == True:
