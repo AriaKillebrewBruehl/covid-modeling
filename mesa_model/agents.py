@@ -187,7 +187,8 @@ class BaseHuman(mesa.Agent):
 		goalY = self.next_pos[1]
 		X = self.pos[0]
 		Y = self.pos[1]
-		if goalX == X and goalY == Y: # if already arrived don't move 
+		if goalX == X and goalY == Y: # if already arrived don't move
+			self.arrived = True
 			return
 		elif goalX < X:
 			X -= 1
@@ -201,6 +202,7 @@ class BaseHuman(mesa.Agent):
 		if new_pos[0] != goalX and new_pos[1] != goalY: # if haven't arrived check for obstacles 
 			new_pos = self.check_new_pos(new_pos)
 		if new_pos[0] == self.next_pos[0] and new_pos[1] == self.next_pos[1]:
+			print("Arrived")
 			self.arrived = True 
 		self.model.grid.move_agent(self, new_pos)
 

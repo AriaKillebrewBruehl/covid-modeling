@@ -80,7 +80,7 @@ class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
 
-	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 600, steps_per_hour_fast = 12, hours_per_day = 3, days = 1):
+	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 12, steps_per_hour_fast = 1, hours_per_day = 3, days = 1):
 		im = Image.open(filename) # open image file
 		self.surfaces = []
 		self.surface_pos = []
@@ -119,10 +119,13 @@ class CovidModel(Model):
 			)
 
 		convert(filename, self, self.surfaces, self.entrances) # convert environment, create position lists
+
 		for surface in self.surfaces:
 			self.surface_pos.append(surface.pos)
 		for entrance in self.entrances:
 			self.entrance_pos.append(entrance.pos)
+
+		print(self.surfaces, self.surface_pos)
 
 		# Initialize agents here
 		def setup_agent(ag_type):
@@ -151,9 +154,10 @@ class CovidModel(Model):
 			self.grid.place_agent(new_human, pos) # place agent on grid 
 			self.schedule.add(new_human) # add agent to schedule
 			self.humans.append(new_human)
+
 		prof_seat = self.surfaces[0]
 		pos = prof_seat.pos
-		self.surfaces.remove(prof_seat)
+
 		prof = Faculty(new_id(), self, pos = pos, next_pos = pos, seat = prof_seat, infected = False, recovered = False, masked = True)
 		self.grid.place_agent(prof, pos)
 		self.schedule.add(prof)
@@ -171,12 +175,12 @@ class CovidModel(Model):
 		# removed arrived to make it more idiomatic
 		for human in self.humans:
 			if not human.quarantined: # only check agents at class
-					if destination == "seats":
-						if not human.arrived or not human.pos in self.surface_pos:
-							return False
-					elif destination == "exit":
-						if not human.arrived or not human.pos in self.entrance_pos:
-							return False
+				if destination == "seats":
+					if not human.arrived or human.pos not in self.surface_pos:
+						return False
+				elif destination == "exit":
+					if not human.arrived or human.pos not in self.entrance_pos:
+						return False
 		return True
 
 	def check_agents(self): # check which agents will become quarantined 
