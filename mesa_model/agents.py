@@ -5,7 +5,7 @@ import numpy.random
 import random
 
 # CONSTANTS -------------------
-# immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
+immuno_increase = 1.5       # how much more likely are immunocompromised people to get sick 
 c_l0_mult = 1.0             # how much more likely are c_l0 people to get sick
 c_l1_mult = 0.5             # how much more likely are c_l1 people to get sick
 c_l2_mult = 0.25            # how much more likely are c_l2 people to get sick
@@ -13,8 +13,9 @@ percent_asymptomatic = 0.38 # what percent of people will show symptoms
 masked_infect_rate = 0.01   # how likey is a masked person to infect a cell 
 unmasked_infect_rate = 0.10 # how likely is an unmasked person to infect a cell
 infection_duration = 14      # how long are symptomatic people contagious 
-contagion_symp = 14
-contagion_asymp = 28        # how long are asymptomatic people contagious 
+shedding_symp = 14
+shedding_asymp = 19        # how long are asymptomatic people contagious 
+shedding_immuno = 28
 #hours = model.hours
 #days = model.days
 # ------------------------------
@@ -22,7 +23,7 @@ contagion_asymp = 28        # how long are asymptomatic people contagious
 
 
 class BaseHuman(mesa.Agent):
-	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, contagion_counter=14, quarantined=False, recovered=False, immune=False, next_pos=(0, 0), seat = (0, 0), arrived = False):
+	def __init__(self, unique_id, model, pos=(0,0), caution_level = 1, masked=False, severity = 0.5, infected=False, symptomatic = False, incubation_period=0, viral_shedding=14, quarantined=False, recovered=False, immune=False, next_pos=(0, 0), seat = (0, 0), arrived = False):
 		super().__init__(unique_id, model)
 		self.caution_level = caution_level
 		self.masked = masked
@@ -30,7 +31,7 @@ class BaseHuman(mesa.Agent):
 		self.infected = infected
 		self.symptomatic = symptomatic 
 		self.incubation_period = incubation_period 
-		self.contagion_counter = contagion_counter
+		self.viral_shedding = viral_shedding
 		self.recovered = recovered
 		self.immune = immune
 		self.next_pos = next_pos
@@ -41,7 +42,7 @@ class BaseHuman(mesa.Agent):
 		self.unique_id = unique_id
 		self.r0 = 0
 		self.quarantined = False # LET 40-41 HANDLE QUARANTINING DO NOT CHANGE
-		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, contagion_counter, recovered, immune, schedule, pos, unique_id, quarantined)
+		#print(caution_level, masked, severity, infected,  symptomatic, incubation_period, viral_shedding, recovered, immune, schedule, pos, unique_id, quarantined)
 		if quarantined:
 			self.quarantine(initialized=False)
 		# since this changes, this shouldn't be here, use latter half instead self.steps_per_hour = self.model.steps_per_hour 
@@ -52,12 +53,12 @@ class BaseHuman(mesa.Agent):
 	def init_infect(self):
 		self.infected = True
 		# Fix later: this won't be feasible if we're doing 600 steps per hour
-		self.contagion_counter = infection_duration  # * 24 * self.steps_per_hour # todo: find a distribution
+		#self.viral_shedding = infection_duration  # * 24 * self.steps_per_hour # todo: find a distribution
 		self.severity = random.random() # give agent random severity
 		if self.severity < percent_asymptomatic: # 38 % of people will be asymptomatic todo: find more reasonable numbers
-			self.contagion_counter = contagion_asymp # todo: find a distribution
-			self.incubation_period = contagion_asymp # aysmptomatic people will never develop symptoms
-			#self.symptomatic = False
+			self.viral_shedding = shedding_asymp # todo: find a distribution
+			self.incubation_period = shedding_asymp # aysmptomatic people will never develop symptoms
+			self.symptomatic = False
 		else:
 			r = random.random()
 			if r <= 0.50:
@@ -66,7 +67,7 @@ class BaseHuman(mesa.Agent):
 				self.incubation_period = random.randint(0, 2) # 25% of people have incubation period of 0 - 2 days
 			elif 0.75 < r:
 				self.incubation_period = 6 # 25% of people have incubation period of 6 days 
-			# self.contagion_counter = contagion_symp # todo: find a distribution
+			self.viral_shedding = shedding_symp # todo: find a distribution
 			self.symptomatic = True
 
 	def infect(self, contact=None, neighbor=None, amount=1.0): 
@@ -82,17 +83,17 @@ class BaseHuman(mesa.Agent):
 			return # don't infect if we've recovered or already infected
 		if self.caution_level == 0: # chance of infection based off of how caution agent is 
 			if isinstance(contact, BaseHuman): # varying chance based on how the agent came in contact with virus 
-				chance = (neighbor.contagion_counter / infection_duration) * c_l0_mult# assumes infected people are most viral at start of infected period 
+				chance = (neighbor.viral_shedding / infection_duration) * c_l0_mult# assumes infected people are most viral at start of infected period 
 			else:
 				chance = 0.1
 		elif self.caution_level == 1:
 			if isinstance(contact, BaseHuman):
-				chance = (neighbor.contagion_counter / infection_duration) * c_l1_mult
+				chance = (neighbor.viral_shedding / infection_duration) * c_l1_mult
 			else:
 				chance = 0.01
 		elif self.caution_level == 2:
 			if isinstance(contact, BaseHuman):
-				chance = (neighbor.contagion_counter / infection_duration) * c_l2_mult
+				chance = (neighbor.viral_shedding / infection_duration) * c_l2_mult
 			else:
 				chance = 0.001
 		r, c = random.random(), chance * increase / self.model.steps_per_hour # need to figure out a balance between speed and feasibility in running
@@ -106,7 +107,7 @@ class BaseHuman(mesa.Agent):
 	def infect_cell(self, neighbor):
 		chance = 1.0 # default chance of infecting cell 
 		if self.masked:
-			chance = 1#(self.contagion_counter / 14) * masked_infect_rate # lower chance of infecting environment if masked 
+			chance = 1#(self.viral_shedding / 14) * masked_infect_rate # lower chance of infecting environment if masked 
 		if random.random() < chance:
 			amt = 1
 			if self.masked:
@@ -115,7 +116,7 @@ class BaseHuman(mesa.Agent):
 
 	def recover(self):
 		self.infected = False
-		self.contagion_counter = 0
+		self.viral_shedding = 0
 		self.recovered = True
 		self.immune = True
 		if self.quarantined == True:
@@ -134,10 +135,10 @@ class BaseHuman(mesa.Agent):
 	def update_infection(self):
 		if not self.infected: # if not infected don't do anything 
 			return
-		self.contagion_counter -= 1 / self.model.steps_per_hour # reduce infection
-		if infection_duration - self.incubation_period <= self.contagion_counter: # develop symptoms after incubation period of virus
-			self.symptomatic == True
-		if self.contagion_counter <= 0: # set as recovered 
+		self.viral_shedding -= 1 / self.model.steps_per_hour # reduce infection
+		#if infection_duration - self.incubation_period <= self.viral_shedding: # develop symptoms after incubation period of virus
+		#	self.symptomatic == True
+		if self.viral_shedding <= 0: # set as recovered 
 			self.recover()
 
 	# agents will move randomly to a sqaure next to their current square
@@ -233,12 +234,12 @@ class BaseHuman(mesa.Agent):
 		self.update_infection()
 		
 class Student(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, viral_shedding=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, viral_shedding=viral_shedding, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
 
 class Faculty(BaseHuman):
-	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, contagion_counter=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
-		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, contagion_counter=contagion_counter, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
+	def __init__(self, unique_id, model, pos=(0,0), infected=False, masked=True, incubation_period=0, viral_shedding=14, immune=False, severity = 0.5, quarantined=False, caution_level = 1, next_pos=(0, 0), seat = (0, 0), recovered=False, arrived = False):
+		super().__init__(unique_id, model, pos=pos, infected=infected, masked=masked, incubation_period=incubation_period, viral_shedding=viral_shedding, immune=immune, severity=severity, caution_level=caution_level, next_pos = next_pos, seat = seat, quarantined=quarantined, arrived = arrived)
 
 class BaseEnvironment(mesa.Agent):
 	def __init__(self, unique_id, model, pos=(0,0)):
@@ -259,10 +260,10 @@ class UnexposedCell(BaseEnvironment): # unreachable by agents
 
 class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces, etc
 	# decay in all cases is how much is left after one iteratoin
-	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), contagion_counter=0, transmissionLikelihood = 1, decay = .50):
+	def __init__(self, unique_id, model, pos=(0,0), infected = np.double(0), viral_shedding=0, transmissionLikelihood = 1, decay = .50):
 		super().__init__(unique_id, model, pos) 
 		self.infected = infected
-		self.contagion_counter = contagion_counter
+		self.viral_shedding = viral_shedding
 		self.transmissionLikelihood = transmissionLikelihood
 		self.decay = decay
 		self.contact = None
