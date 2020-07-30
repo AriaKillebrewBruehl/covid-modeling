@@ -89,7 +89,7 @@ def get_peak_r0_loc(model):
 	return model.datacollector.get_model_vars_dataframe()["Average R_0"].idxmax()
 
 def get_peak_infection_pct(model):
-	return model.datacollector.get_model_vars_dataframe()["Infected"].max() / len(model)
+	return model.datacollector.get_model_vars_dataframe()["Infected"].max() / len(model.humans)
 
 class CovidModel(Model):
 	def size(filename):

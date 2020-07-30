@@ -9,6 +9,7 @@ import pandas as pd
 import pickle
 
 model_reporters = {
+	"num_humans": lambda x: len(x.humans),
 	"length": lambda x: x.schedule.steps,
 	"peak_infection": mesa_model.model.get_peak_infection,
 	"peak_infection_loc": mesa_model.model.get_peak_infection_loc,
@@ -24,7 +25,7 @@ def run(fixed_params):
 	global model_reporters
 	print("Job: " + str(fixed_params.pop("job")))
 	try:
-		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=5, max_steps=5000, model_reporters=model_reporters)
+		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=1, max_steps=5000, model_reporters=model_reporters)
 		runner.run_all()
 		# Note: Will return in correct order, first keys up to 'Run' will not be in correct order
 		frame = runner.get_model_vars_dataframe()
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
 
 	var_params = {
-		"num_infec_agents": 1, #range(1, 5),
+		"num_infec_agents": range(1, 5),
 		"num_uninfec_agents": 20, #range(10, 100, 10),
 		"num_rec_agents": 0,
 		"mask_efficacy": 95,

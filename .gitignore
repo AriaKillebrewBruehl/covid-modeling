@@ -1,2 +1,3 @@
 *.pyc
 *.xlsx
+.ipynb_checkpoints/
