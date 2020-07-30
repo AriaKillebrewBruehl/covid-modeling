@@ -231,7 +231,7 @@ class BaseHuman(mesa.Agent):
 		for neighbor in self.model.grid.get_neighbors(self.pos, True, False): # second arg Moore, thrid arg include center, thrid arg radius 
 			if not self.infected: # what will happen to uninfected agents
 				if neighbor.infected:
-					self.infect(neighbor) # let infect() determmine if they should move from recovered to another category
+					self.infect(contact=neighbor if isinstance(neighbor, BaseHuman) else neighbor.contact) # let infect() determmine if they should move from recovered to another category
 			if self.infected: # what will infected agents do
 				if not neighbor.infected and isinstance(neighbor, InfectableCell):
 					self.infect_cell(neighbor)
@@ -301,7 +301,7 @@ class InfectableCell(BaseEnvironment): # could contain particles, air, surfaces,
 		for agent in self.model.grid.get_cell_list_contents(self.pos):
 			if isinstance(agent, BaseHuman) and not agent.infected and not agent.recovered:
 				if random.random() < self.infected:
-					agent.infect(contact=self.contact, neighbor=self, amount=self.infected) # In the future, the initial amount may be important.
+					agent.infect(contact=self.contact, amount=self.infected) # In the future, the initial amount may be important.
 
 	def step(self):
 		self.decay_cell()
