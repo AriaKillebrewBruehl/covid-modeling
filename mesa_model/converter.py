@@ -43,7 +43,6 @@ def convert(filename, model, surface_list, entrances):
                 environment = UnexposedCell(new_id(), model,(x, y))
             elif rgba == inaccessInfec:
                 environment = UnexposedCell(new_id(), model,(x, y))
-                #environment.infect()
             elif rgba == surface:
                 environment = SurfaceCell(new_id(), model, (x, y))
                 surface_list.append(environment)
@@ -68,7 +67,6 @@ def convert(filename, model, surface_list, entrances):
             elif rgba == other:
                 environment = InfectableCell(new_id(), model, (x, y))
             else:
-                pass
-                #print(f"error: unregistered color found at ({x}, {y})")
+                print(f"error: unregistered color found at ({x}, {y})")
             model.grid.place_agent(environment, (x, y)) # place in environment
             model.schedule.add(environment) # add to schedule
