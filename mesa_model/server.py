@@ -105,6 +105,7 @@ model_params = {
 	"hours_per_day" : UserSettableParameter("number", "Hours/Day", 3, description="Hours/Day"),
 	"steps_per_hour_slow" : UserSettableParameter("number", "Steps/Hour (Slow)", 12, description="Steps/Hour (Slow)"),
 	"steps_per_hour_fast" : UserSettableParameter("number", "Steps/Hour (Fast)", 1, description="Steps/Hour (Fast)"),
+	"cleans_per_day" : UserSettableParameter("number", "Cleans/Day", 1, description="Cleans/Day"),
 	"filename" : map_option
 }
 

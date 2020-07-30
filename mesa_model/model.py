@@ -95,7 +95,7 @@ class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
 
-	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 12, steps_per_hour_fast = 1, hours_per_day = 3, days = 1):
+	def __init__(self, filename, num_infec_agents=20, num_uninfec_agents=20, num_rec_agents=20, mask_efficacy=95, passing = True, steps_per_hour_slow = 12, steps_per_hour_fast = 1, hours_per_day = 3, days = 1, cleans_per_day=1):
 		im = Image.open(filename) # open image file
 		self.surfaces = []
 		self.surface_pos = []
@@ -112,6 +112,7 @@ class CovidModel(Model):
 		self.steps_per_hour_fast = steps_per_hour_fast
 		self.steps_per_hour = self.steps_per_hour_fast
 		self.hours_per_day = hours_per_day
+		self.cleans_per_day = cleans_per_day
 		self.hours = 0
 		self.days = days
 		self.datacollector = DataCollector(
@@ -222,7 +223,8 @@ class CovidModel(Model):
 	def clean_grid(self):
 		for pos in self.surface_pos:
 				for x in self.grid.get_cell_list_contents(pos):
-					x.clean
+					if isinstance(x, BaseEnvironment):
+						x.clean()
 		for pos in self.entrance_pos:
 				for x in self.grid.get_cell_list_contents(pos):
 					if isinstance(x, BaseEnvironment):
@@ -254,6 +256,8 @@ class CovidModel(Model):
 			if self.hours % self.hours_per_day < 0.001: # after a 3 hour class 
 				self.leave() # move agents off grid
 				self.passing = True # passing period begins again
+			if self.hours % (self.hours_per_day / self.cleans_per_day) < 0.001:
+				self.clean_grid()
 		if self.check_arrival("exit"): # if all agents have left
 			self.check_agents() # agents check selves for symptoms
 			self.clean_grid() # clean grid
