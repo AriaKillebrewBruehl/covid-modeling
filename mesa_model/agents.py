@@ -116,7 +116,7 @@ class BaseHuman(mesa.Agent):
 		r, c = random.random(), chance * increase / self.model.steps_per_hour # need to figure out a balance between speed and feasibility in running
 		if r < c:
 			self.init_infect()
-			if contact:
+			if isinstance(contact, BaseHuman):
 				contact.update_r0()
 		else:
 			return
