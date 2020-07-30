@@ -9,7 +9,13 @@ import pandas as pd
 import pickle
 
 model_reporters = {
-	"length": lambda x: x.schedule.steps
+	"length": lambda x: x.schedule.steps,
+	"peak_infection": mesa_model.model.get_peak_infection,
+	"peak_infection_loc": mesa_model.model.get_peak_infection_loc,
+	"peak_infection_pct": mesa_model.model.get_peak_infection_pct,
+	"peak_r0": mesa_model.model.get_peak_r0,
+	"peak_r0_loc": mesa_model.model.get_peak_r0_loc,
+
 	"dataframe": mesa_model.model.get_dataframe
 }
 

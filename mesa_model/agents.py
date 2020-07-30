@@ -70,6 +70,10 @@ class BaseHuman(mesa.Agent):
 			self.symptomatic = True
 
 	def infect(self, contact=None, neighbor=None, amount=1.0): 
+		# invulnerable zone
+		if self.pos in self.model.entrance_pos:
+			return
+
 		chance = 1.0 # default chance 
 		increase = amount # default increase in contraction 
 		# if self.immunocompromised:

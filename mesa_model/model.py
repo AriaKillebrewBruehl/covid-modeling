@@ -76,6 +76,21 @@ def get_hours(model):
 def get_dataframe(model):
 	return pickle.dumps(model.datacollector.get_model_vars_dataframe().copy())
 
+def get_peak_infection(model):
+	return model.datacollector.get_model_vars_dataframe()["Infected"].max()
+
+def get_peak_infection_loc(model):
+	return model.datacollector.get_model_vars_dataframe()["Infected"].idxmax()
+
+def get_peak_r0(model):
+	return model.datacollector.get_model_vars_dataframe()["Average R_0"].max()
+
+def get_peak_r0_loc(model):
+	return model.datacollector.get_model_vars_dataframe()["Average R_0"].idxmax()
+
+def get_peak_infection_pct(model):
+	return model.datacollector.get_model_vars_dataframe()["Infected"].max() / len(model)
+
 class CovidModel(Model):
 	def size(filename):
 		return Image.open(filename).size
@@ -125,6 +140,8 @@ class CovidModel(Model):
 		for entrance in self.entrances:
 			self.entrance_pos.append(entrance.pos)
 
+		# THIS SHOULD BE NOTED THAT THIS WILL ADD ONE TO THE TOTAL NUMBER OF HUMANS
+
 		prof_seat = self.surfaces[0]
 		pos = prof_seat.pos
 		self.surfaces.remove(prof_seat)
@@ -132,7 +149,7 @@ class CovidModel(Model):
 		self.grid.place_agent(prof, pos)
 		self.schedule.add(prof)
 		self.humans.append(prof)
-		
+
 		# Initialize agents here
 		def setup_agent(ag_type):
 			pos = random.choice(self.entrance_pos) # start agents at entrance
