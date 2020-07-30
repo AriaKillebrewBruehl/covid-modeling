@@ -104,8 +104,8 @@ class CovidModel(Model):
 		self.humans = []
 		self.filename = filename
 		self.width, self.height = im.size # Get the width and height of the image to iterate over
-		self.schedule = RandomActivation(self) # Is this the best choice for agent activation? If not may need more implementation later.
-		self.grid = MultiGrid(width=self.width, height=self.height, torus=False) # last arg prevents wraparound
+		self.schedule = RandomActivation(self)
+		self.grid = MultiGrid(width=self.width, height=self.height, torus=False)
 		self.mask_efficacy = mask_efficacy / 100
 		self.passing = passing
 		self.steps_per_hour_slow = steps_per_hour_slow
@@ -141,7 +141,7 @@ class CovidModel(Model):
 			self.entrance_pos.append(entrance.pos)
 
 		# THIS SHOULD BE NOTED THAT THIS WILL ADD ONE TO THE TOTAL NUMBER OF HUMANS
-
+		# create professor
 		prof_seat = self.surfaces[0]
 		pos = prof_seat.pos
 		self.surfaces.remove(prof_seat)
@@ -149,8 +149,11 @@ class CovidModel(Model):
 		self.grid.place_agent(prof, pos)
 		self.schedule.add(prof)
 		self.humans.append(prof)
-
-		# Initialize agents here
+		# 
+		# setup_agnet(ag_type)
+		# Find random starting postion and seat for agent. Create new agent with these parameters. Update
+		# agent's infection status based off of ag_type. Give agent random caution level and update agent accordingly
+		# Place agent on grid and add to scheduler and list of humans. 
 		def setup_agent(ag_type):
 			pos = random.choice(self.entrance_pos) # start agents at entrance
 			seat = random.choice(self.surfaces) # get random goal postion for agent 
@@ -186,9 +189,10 @@ class CovidModel(Model):
 			setup_agent("rec",)
 
 		self.running = True
-	
-	def check_arrival(self, destination): # check if all agents are in seats
-		# removed arrived to make it more idiomatic
+	#
+	# self.check_arrival(destination)
+	# Check arrival of nonquarantined agents at given destination.
+	def check_arrival(self, destination):
 		for human in self.humans:
 			if not human.quarantined: # only check agents at class
 				if destination == "seats":
@@ -198,42 +202,53 @@ class CovidModel(Model):
 					if not human.arrived or human.pos not in self.entrance_pos:
 						return False
 		return True
-
-	def check_agents(self): # check which agents will become quarantined 
+	#
+	# self.check_agents()
+	# Cautious agents check selves for symptoms and self quarantine if necessary.
+	def check_agents(self):
 		for human in self.humans:
 			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
 				human.quarantine()
 				print("quarantined " + str(human.unique_id) + " on step" + str(self.schedule.steps)) 
-
-	def leave(self): # update agents to leave classroom
+	#
+	# self.leave()
+	# Update agent's next position to be exit.
+	def leave(self):
 		for human in self.humans:
-			human.next_pos = random.choice(self.entrance_pos) # set scheduled position to entrance
-	
+			human.next_pos = random.choice(self.entrance_pos)
+	#
+	# self.clean_grid()
+	# Iterate over surface and door cells and clean cells of virus.
 	def clean_grid(self):
 		for pos in self.surface_pos:
 				for x in self.grid.get_cell_list_contents(pos):
-					x.cleanse(1.0)
+					x.clean
 		for pos in self.entrance_pos:
 				for x in self.grid.get_cell_list_contents(pos):
 					if isinstance(x, BaseEnvironment):
-						x.cleanse(1.0)
+						x.clean()
 		print("cleaned")
-	
-	def reset(self): # reset scheduled position to seat
+	#
+	# self.reset
+	# Reset next postion of all agents to their seat.
+	def reset(self):
 		for human in self.humans:
 			human.next_pos = human.seat.pos
-
+	# 
+	# self.step()
+	# Update steps_per_hour based off of agent arrival. Complete one class day. Move agents off grid, 
+	# clean grid, and self-quarantine agents if necessary. Stop simulation if all agents are recovered or uninfected. 
 	def step(self):
 		# can we stop?
 		if get_recovered_agents(self) + get_uninfected_agents(self) == len(self.humans):
 			self.running = False
 
 		if self.check_arrival("seats"): # if all agents have arrived class has "started"
-			self.passing = False # "passing period" ends, "class" begins 
+			self.passing = False
 		if self.passing:
-			self.steps_per_hour = self.steps_per_hour_slow # move every 6 sec during passing period
+			self.steps_per_hour = self.steps_per_hour_slow
 		else:
-			self.steps_per_hour = self.steps_per_hour_fast # move every 5 minutes during class 
+			self.steps_per_hour = self.steps_per_hour_fast
 		if not self.passing:
 			self.hours += 1 / self.steps_per_hour # add time to class hours
 			if self.hours % self.hours_per_day < 0.001: # after a 3 hour class 
@@ -242,11 +257,10 @@ class CovidModel(Model):
 		if self.check_arrival("exit"): # if all agents have left
 			self.check_agents() # agents check selves for symptoms
 			self.clean_grid() # clean grid
-			self.hours = 0 # reset class hours
+			self.hours = 0
 			self.days += 1 # number of days of class increases
 			self.reset() # update scheduled position
-		#print(get_average_r0(self))
-		print("a(s): " + str(self.check_arrival("seats")) + " a(e): " + str(self.check_arrival("exit")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
+		#print("a(s): " + str(self.check_arrival("seats")) + " a(e): " + str(self.check_arrival("exit")) + ", s_p_h: " + str(self.steps_per_hour) + ", h: " + str(self.hours) + ", d: " + str(self.days) + ", s: " + str(self.schedule.steps))
 		self.schedule.step()
 		self.datacollector.collect(self)
 	
