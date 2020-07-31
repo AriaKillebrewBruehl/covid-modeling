@@ -179,21 +179,22 @@ class BaseHuman(mesa.Agent):
 	def check_new_pos(self, pos):
 		X, Y = pos[0], pos[1]
 		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way
+			print("Obstacle")
 			if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((self.pos[0], Y))]:
-				new_pos = (self.pos[0] - 1, Y)
+				X, Y = random.choice([(self.pos[0] - 1, Y), (self.pos[0] + 1, Y)])
 			elif True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, self.pos[1]))]:
-				new_pos = (X, self.pos[1] + 1)
+				X, Y = random.choice([(X, self.pos[1] + 1), (X, self.pos[1] - 1)])
 			else:
 				choices = [(self.pos[0], self.pos[1] - 1), (self.pos[0] + 1, self.pos[1])]
-				new_pos = random.choice(choices)
+				X, Y = random.choice(choices)
 		if X < 0: # don't move off grid 
-			X += 1
-		elif X > 32:
-			X -= 1
+			X = 0
+		elif X >= self.model.grid.width:
+			X = self.model.grid.width - 1
 		if Y < 0:
 			Y += 1	
-		elif Y > 32:
-			Y -= 1
+		elif Y >= self.model.grid.height:
+			Y = self.model.grid.height - 1
 		new_pos = (X, Y)
 		return new_pos
 #
