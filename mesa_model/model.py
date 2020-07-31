@@ -210,7 +210,7 @@ class CovidModel(Model):
 		for human in self.humans:
 			if human.infected and human.symptomatic and human.caution_level > 0 and not human.quarantined: # if cautious person and symptomatic quarantine
 				human.quarantine()
-				print("quarantined " + str(human.unique_id) + " on step" + str(self.schedule.steps)) 
+				#print("quarantined " + str(human.unique_id) + " on step" + str(self.schedule.steps)) 
 	#
 	# self.leave()
 	# Update agent's next position to be exit.
@@ -229,7 +229,7 @@ class CovidModel(Model):
 				for x in self.grid.get_cell_list_contents(pos):
 					if isinstance(x, BaseEnvironment):
 						x.clean()
-		print("cleaned")
+		#print("cleaned")
 	#
 	# self.reset
 	# Reset next postion of all agents to their seat.

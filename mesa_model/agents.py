@@ -179,7 +179,7 @@ class BaseHuman(mesa.Agent):
 	def check_new_pos(self, pos):
 		X, Y = pos[0], pos[1]
 		if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, Y))]: # if obstacle in way
-			print("Obstacle")
+			#print("Obstacle")
 			if True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((self.pos[0], Y))]:
 				X, Y = random.choice([(self.pos[0] - 1, Y), (self.pos[0] + 1, Y)])
 			elif True in [isinstance(x, BaseHuman) or isinstance(x, SurfaceCell) for x in self.model.grid.get_cell_list_contents((X, self.pos[1]))]:

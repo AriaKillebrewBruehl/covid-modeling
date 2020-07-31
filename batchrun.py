@@ -16,7 +16,6 @@ model_reporters = {
 	"peak_infection_pct": mesa_model.model.get_peak_infection_pct,
 	"peak_r0": mesa_model.model.get_peak_r0,
 	"peak_r0_loc": mesa_model.model.get_peak_r0_loc,
-
 	"dataframe": mesa_model.model.get_dataframe
 }
 
@@ -25,7 +24,7 @@ def run(fixed_params):
 	global model_reporters
 	print("Job: " + str(fixed_params.pop("job")))
 	try:
-		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=1, max_steps=5000, model_reporters=model_reporters)
+		runner = br.BatchRunner(mesa_model.model.CovidModel, variable_parameters=fixed_params, iterations=4, max_steps=5000, model_reporters=model_reporters)
 		runner.run_all()
 		# Note: Will return in correct order, first keys up to 'Run' will not be in correct order
 		frame = runner.get_model_vars_dataframe()
@@ -58,10 +57,12 @@ if __name__ == "__main__":
 
 
 	var_params = {
-		"num_infec_agents": range(1, 5),
-		"num_uninfec_agents": 20, #range(10, 100, 10),
-		"num_rec_agents": 0,
-		"mask_efficacy": 95,
+		"num_infec_agents": range(1, 3),
+		"num_uninfec_agents": range(10, 100, 20),
+		"num_rec_agents": range(0, 20, 10),
+		"hours_per_day": range(1, 5, 1),
+		"cleans_per_day": range(1, 3, 2),
+		"mask_efficacy": range(85, 100, 5),
 		"filename": map_option
 		#"mask_efficacy": range(0, 100, 5)			
 			}
@@ -89,23 +90,30 @@ if __name__ == "__main__":
 
 	out = res.get()
 	avg_frames = []
-	for run_frame in out:
-		# Each entry is a single frame with all results of BatchRunner with last column being frames of individual runs.
-		avg_frame = pickle.loads(run_frame["dataframe"][0])
-		avg_frame[:] = 0
-		# Average of all datacollector frames
-		params = list(run_frame.iloc[0][0:len(var_params)])
-		dc_frames = [pickle.loads(run_frame["dataframe"][i]) for i in range(len(run_frame["dataframe"]))]
-		max_len = max([x.shape[0] for x in dc_frames])
-		avg_frame = avg_frame.append(avg_frame.iloc[[-1] * (max_len - avg_frame.shape[0])]).reset_index(drop=True)
+	try:
+		for run_frame in out:
+			if run_frame is None:
+				continue
 
-		for dc_frame in dc_frames:
-			# Question: what do we do with dataframes that have varying sizes?
-			print(dc_frame.shape)
-			dc_frame = dc_frame.append(dc_frame.iloc[[-1] * (max_len - dc_frame.shape[0])]).reset_index(drop=True)
-			print(dc_frame.shape)
-			avg_frame += dc_frame / len(dc_frames)
-		avg_frames.append((params, avg_frame))
+			# Each entry is a single frame with all results of BatchRunner with last column being frames of individual runs.
+			avg_frame = pickle.loads(run_frame["dataframe"][0])
+			avg_frame[:] = 0
+			# Average of all datacollector frames
+			params = list(run_frame.iloc[0][0:len(var_params)])
+			dc_frames = [pickle.loads(run_frame["dataframe"][i]) for i in range(len(run_frame["dataframe"]))]
+			max_len = max([x.shape[0] for x in dc_frames])
+			avg_frame = avg_frame.append(avg_frame.iloc[[-1] * (max_len - avg_frame.shape[0])]).reset_index(drop=True)
+
+			for dc_frame in dc_frames:
+				# Question: what do we do with dataframes that have varying sizes?
+				print(dc_frame.shape)
+				dc_frame = dc_frame.append(dc_frame.iloc[[-1] * (max_len - dc_frame.shape[0])]).reset_index(drop=True)
+				print(dc_frame.shape)
+				avg_frame += dc_frame / len(dc_frames)
+			avg_frames.append((params, avg_frame))
+	except:
+		while True:
+			print(eval(input(">>> ")))
 
 	frame = pd.concat(res.get())
 	frame = frame.reset_index(drop=True)
