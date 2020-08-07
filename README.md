@@ -14,4 +14,4 @@ This model primarily requires SciPy, Mesa and PIL to run, but for the entire rep
 
 ## Acknowledgements 
 
-Special thanks to Christof Teuscher and MacKenzie Gray for making the Portland State altREU program possible, for without which this project would not have happened. Thanks to Lisa Marriott at OHSU for mentoring us as we developed this project. Finally, thanks to Wayne Wakefield, Alexander York, and Merlin Carson for assistance with the development of our model.
+Special thanks to Christof Teuscher and MacKenzie Gray for making the Portland State altREU program possible, for without which this project would not have happened. Thanks to Lisa Marriott at OHSU for mentoring us as we developed this project. Finally, thanks to Wayne Wakeland, Alexander York, and Merlin Carson for assistance with the development of our model.
